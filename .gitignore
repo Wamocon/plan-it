@@ -5,5 +5,5 @@ out/
 .env.local
 *.tsbuildinfo
 next-env.d.ts
-.claude/
 tmp/
+templates/wmc_extracted/
