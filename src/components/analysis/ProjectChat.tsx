@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Project, ChatMessage } from '@/types';
 import { useAppStore } from '@/stores/appStore';
 import { Send, Trash2, Bot } from 'lucide-react';
@@ -16,7 +16,7 @@ const SUGGESTIONS = [
 export function ProjectChat({ project, apiKey }: { project: Project; apiKey: string }) {
   const addChatMessage = useAppStore(s => s.addChatMessage);
   const clearChat = useAppStore(s => s.clearChat);
-  const messages = project.chatHistory || [];
+  const messages = useMemo(() => project.chatHistory || [], [project.chatHistory]);
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

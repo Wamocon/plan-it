@@ -7,7 +7,7 @@
  * - Nicht eingeloggt + /api/*            → Kein Redirect (pass-through)
  * - Eingeloggt + beliebige Route         → Pass-through
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────
 
@@ -57,6 +57,16 @@ function makeRequest(pathname: string) {
 import { middleware } from '@/middleware';
 
 describe('middleware – Authentifizierungs-Guard', () => {
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+  });
+
+  afterAll(() => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockNext.mockReturnValue({ _type: 'next', cookies: { set: vi.fn() } });
