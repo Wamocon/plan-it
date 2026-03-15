@@ -8,7 +8,7 @@
  *    deleteAiConfig mit/ohne verbleibende aktive Konfiguration.
  *  - Pfadüberdeckung: Task-Status-Übergänge, setTaskJiraIssue, Chat-Verlauf.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAppStore } from '@/stores/appStore';
 import type { AnalysisResult, WizardData } from '@/types';
 
