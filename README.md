@@ -42,7 +42,7 @@ Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchite
 - **Score-Trend** — Automatischer Snapshot bei jeder Re-Analyse
 - **KI-Chat** — Kontextbezogene Antworten auf Basis der vollständigen Analyse
 - **PDF & DOCX Export** — Analysebericht exportieren
-- **Persistenz** — Alle Daten via Zustand + localStorage (kein Backend erforderlich)
+- **Persistenz** — Lokale Speicherung via Zustand + localStorage **oder** vollständige Supabase-Persistenz (optional)
 
 ---
 
@@ -52,10 +52,9 @@ Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchite
 # Dependencies installieren
 npm install
 
-# (Optional) Google Gemini API Key setzen
-# Kostenlos holen: https://aistudio.google.com/app/apikey
+# Umgebungsvariablen anlegen
 cp .env.example .env.local
-# GOOGLE_AI_API_KEY=dein_key_hier eintragen
+# GOOGLE_AI_API_KEY=dein_key_hier eintragen (optional)
 
 # Starten
 npm run dev
@@ -65,6 +64,50 @@ npm run dev
 
 **Ohne API Key** funktioniert die App mit regelbasierter Analyse.  
 **Mit API Key** analysiert Google Gemini die Daten individuell und gibt spezifischere Empfehlungen.
+
+---
+
+## Lokale Datenbank (Docker)
+
+Für lokale Entwicklung mit PostgreSQL (kein Supabase-Account nötig):
+
+```bash
+# PostgreSQL + pgAdmin starten
+npm run db:start
+
+# pgAdmin öffnen: http://localhost:5050
+# Login: admin@archplanner.local / admin
+# PostgreSQL: localhost:5432 / archplanner / archplanner / archplanner
+
+# DB stoppen
+npm run db:stop
+
+# DB zurücksetzen (alle Daten löschen + Schema neu einspielen)
+npm run db:reset
+
+# Logs anzeigen
+npm run db:logs
+```
+
+Das Schema und Testdaten werden beim ersten Start automatisch aus `supabase/migrations/` eingespielt.
+
+---
+
+## Supabase-Integration (Cloud)
+
+Für persistente Cloud-Speicherung mit Authentifizierung:
+
+1. Supabase-Projekt anlegen auf [supabase.com](https://supabase.com)
+2. SQL-Migration ausführen: Inhalt von `supabase/migrations/20240101000000_initial_schema.sql` im Supabase SQL-Editor ausführen
+3. Umgebungsvariablen setzen:
+
+```bash
+# .env.local
+NEXT_PUBLIC_SUPABASE_URL=https://dein-projekt.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=dein-anon-key
+```
+
+4. App starten — Benutzer werden automatisch auf `/auth/login` weitergeleitet
 
 ---
 
@@ -107,10 +150,13 @@ Analysebericht mit 8 Tabs + Chat + Jira-Anbindung
 - **React 19** + TypeScript
 - **Tailwind CSS** — Dark Theme, WMC Corporate Design
 - **Zustand** mit `persist`-Middleware (localStorage)
+- **Supabase** (`@supabase/supabase-js`, `@supabase/ssr`) — Auth + Cloud-DB (optional)
+- **PostgreSQL 16** via Docker — Lokale Entwicklungsdatenbank
 - **Google Generative AI** — Gemini 2.0 Flash
 - **jsPDF + docx** — PDF & Word Export
 - **lucide-react** — Icons
 - **SVG-Charts** — Heatmap, Trendlinie (kein externes Chart-Framework)
+- **Vitest** — Unit-Tests mit Coverage
 
 ---
 
@@ -147,12 +193,24 @@ src/
 │   │   └── MultiSelect.tsx
 │   └── wizard/WizardForm.tsx
 ├── lib/
+│   ├── supabase/
+│   │   ├── client.ts                   # Browser-Client (createBrowserClient)
+│   │   ├── server.ts                   # Server-Client (createServerClient)
+│   │   └── db.ts                       # CRUD-Layer (20+ Funktionen)
 │   ├── fallback-analysis.ts            # Regelbasierte Analyse
 │   ├── wizard-steps.ts                 # Wizard-Konfiguration
 │   ├── export-pdf.ts
 │   └── export-word.ts
-├── stores/appStore.ts                  # Zustand Store (mit Jira-Configs)
+├── middleware.ts                        # Auth-Guard (Redirect zu /auth/login)
+├── stores/appStore.ts                  # Zustand Store + Supabase-Persistenz
 └── types/index.ts                      # Alle TypeScript-Typen
+
+supabase/
+└── migrations/
+    ├── 00000000000000_local_dev_schema.sql   # Lokales Schema (Docker)
+    └── 20240101000000_initial_schema.sql     # Produktions-Schema (Supabase)
+
+docker-compose.yml                      # PostgreSQL 16 + pgAdmin
 ```
 
 ---
@@ -162,4 +220,27 @@ src/
 | Variable | Beschreibung |
 |----------|-------------|
 | `GOOGLE_AI_API_KEY` | Google Gemini API Key ([kostenlos holen](https://aistudio.google.com/app/apikey)) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Projekt-URL (nur für Cloud-Betrieb) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Anon-Key (nur für Cloud-Betrieb) |
+
+---
+
+## Tests
+
+```bash
+# Alle Tests ausführen
+npm test
+
+# Mit Coverage-Report
+npm run test:coverage
+```
+
+| Bereich | Tests |
+|---------|-------|
+| Zustand Store (appStore) | Unit-Tests aller Actions |
+| Supabase DB-Layer | 66 Tests (CRUD, Auth, Fehlerbehandlung) |
+| Middleware (Auth-Guard) | 10 Tests |
+| Auth Callback + Schema | 11 Tests |
+| API-Routen (analyze, chat, jira) | Integration-Tests |
+| Docker-Infrastruktur | 34 Validierungstests |
 
