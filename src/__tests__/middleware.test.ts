@@ -66,56 +66,56 @@ describe('middleware – Authentifizierungs-Guard', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const req = makeRequest('/');
     const res = await middleware(req as never);
-    expect((res as Record<string, unknown>)._type).toBe('redirect');
-    expect((res as Record<string, unknown>).destination).toBe('/auth/login');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+    expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
 
   it('leitet auf /auth/login um auch bei geschützten Unterseiten', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/project/123') as never);
-    expect((res as Record<string, unknown>).destination).toBe('/auth/login');
+    expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
 
   it('lässt /auth/login durch ohne Redirect wenn nicht eingeloggt', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/auth/login') as never);
-    expect((res as Record<string, unknown>)._type).toBe('next');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /auth/callback durch ohne Redirect wenn nicht eingeloggt', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/auth/callback') as never);
-    expect((res as Record<string, unknown>)._type).toBe('next');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /api/analyze durch ohne Redirect wenn nicht eingeloggt', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/api/analyze') as never);
-    expect((res as Record<string, unknown>)._type).toBe('next');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /api/chat durch ohne Redirect wenn nicht eingeloggt', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/api/chat') as never);
-    expect((res as Record<string, unknown>)._type).toBe('next');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf / durch', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     const res = await middleware(makeRequest('/') as never);
-    expect((res as Record<string, unknown>)._type).toBe('next');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf /settings durch', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     const res = await middleware(makeRequest('/settings') as never);
-    expect((res as Record<string, unknown>)._type).toBe('next');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf /wizard durch', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
     const res = await middleware(makeRequest('/wizard') as never);
-    expect((res as Record<string, unknown>)._type).toBe('next');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('ruft auth.getUser() immer auf (Session-Refresh)', async () => {

@@ -51,8 +51,8 @@ describe('GET /auth/callback', () => {
   it('leitet nach / um', async () => {
     const req = new Request('http://localhost/auth/callback?code=abc');
     const res = await GET(req as never);
-    expect((res as Record<string, unknown>)._type).toBe('redirect');
-    expect(((res as Record<string, unknown>).href as string)).toContain('/');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+    expect(((res as unknown as Record<string, unknown>).href as string)).toContain('/');
   });
 });
 
