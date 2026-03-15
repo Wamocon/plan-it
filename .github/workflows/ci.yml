@@ -1,0 +1,129 @@
+name: CI – Lint, Tests & Coverage
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  lint-and-test:
+    name: Lint & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: TypeScript-Typen prüfen
+        run: npx tsc --noEmit
+
+      - name: ESLint ausführen
+        run: npm run lint
+
+      - name: Unit-Tests mit Coverage ausführen
+        run: npm run test:coverage
+
+      - name: Coverage-Zusammenfassung in Job Summary schreiben
+        if: always()
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+          const total = summary.total;
+          const run = process.env.RUN_NUMBER;
+          const branch = process.env.REF_NAME;
+          const sha = process.env.SHA.slice(0, 7);
+          const pagesUrl = `https://literate-train-jlewrjo.pages.github.io/`;
+
+          const pct = (v) => `${v.pct}% (${v.covered}/${v.total})`;
+          const icon = (v) => v.pct >= 80 ? '✅' : v.pct >= 60 ? '⚠️' : '❌';
+
+          const lines = [
+            '## 📊 Coverage Report',
+            '',
+            `> Run **#${run}** · Branch \`${branch}\` · Commit \`${sha}\``,
+            '',
+            `### 🔗 [Interaktiver HTML-Report öffnen ↗](${pagesUrl})`,
+            '',
+            '| Kategorie | Abdeckung | Status |',
+            '|-----------|-----------|--------|',
+            `| Statements | ${pct(total.statements)} | ${icon(total.statements)} |`,
+            `| Branches   | ${pct(total.branches)}   | ${icon(total.branches)}   |`,
+            `| Functions  | ${pct(total.functions)}  | ${icon(total.functions)}  |`,
+            `| Lines      | ${pct(total.lines)}      | ${icon(total.lines)}      |`,
+            '',
+            '### Dateien',
+            '',
+            '| Datei | Stmt | Branch | Func | Lines |',
+            '|-------|------|--------|------|-------|',
+          ];
+
+          for (const [file, data] of Object.entries(summary)) {
+            if (file === 'total') continue;
+            const short = file.replace(process.cwd() + '/', '').replace(/\\/g, '/');
+            lines.push(`| \`${short}\` | ${data.statements.pct}% | ${data.branches.pct}% | ${data.functions.pct}% | ${data.lines.pct}% |`);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          EOF
+
+      - name: Coverage-HTML für GitHub Pages vorbereiten
+        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: coverage/
+
+      - name: Coverage-Bericht als Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-${{ github.run_number }}
+          path: coverage/
+          retention-days: 30
+
+      - name: Coverage-Zusammenfassung im PR kommentieren
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          json-summary-path: coverage/coverage-summary.json
+          json-final-path: coverage/coverage-final.json
+
+  deploy-coverage:
+    name: Coverage auf GitHub Pages veröffentlichen
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Auf GitHub Pages deployen
+        id: deployment
+        uses: actions/deploy-pages@v4
