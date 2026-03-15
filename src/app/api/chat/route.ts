@@ -5,10 +5,11 @@ import { fallbackAnalysis } from '@/lib/fallback-analysis';
 
 export async function POST(request: NextRequest) {
   try {
-    const { project, question, history } = (await request.json()) as {
+    const { project, question, history, apiKey: clientApiKey } = (await request.json()) as {
       project: Project;
       question: string;
       history: { role: 'user' | 'model'; text: string }[];
+      apiKey?: string;
     };
 
     // Input validierung
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Frage zu lang (max. 1000 Zeichen)' }, { status: 400 });
     }
 
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    // API Key: vom Client (bevorzugt) oder Fallback auf Umgebungsvariable
+    const apiKey = clientApiKey?.trim() || process.env.GOOGLE_AI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ answer: fallbackChatAnswer(question, project) });
     }
@@ -74,6 +76,9 @@ Beantworte Fragen zu dieser Analyse auf Deutsch. Sei präzise und praktisch. Wen
     const msg = e.message || '';
     if (msg.includes('429') || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')) {
       return NextResponse.json({ error: 'KI-Limit erreicht. Bitte später erneut versuchen.' }, { status: 429 });
+    }
+    if (msg.includes('API_KEY_INVALID') || msg.includes('401') || msg.includes('403')) {
+      return NextResponse.json({ error: 'Ungültiger API-Schlüssel. Bitte in den Einstellungen prüfen.' }, { status: 401 });
     }
     console.error('Chat error:', e);
     return NextResponse.json({ error: 'Fehler bei der KI-Anfrage' }, { status: 500 });

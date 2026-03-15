@@ -3,6 +3,21 @@ export interface Risk { title: string; severity: Severity; description: string; 
 export interface SollItem { area: string; target: string; }
 export interface Wave { number: number; title: string; duration: string; items: string[]; }
 export interface WizardData { [key: string]: string | undefined; }
+
+// KI-Provider Konfiguration
+export type AiProvider = 'gemini' | 'openai';
+export interface AiConfig {
+  id: string;
+  provider: AiProvider;
+  label: string;
+  apiKey: string;
+  isActive: boolean;
+  createdAt: string;
+}
+export const AI_PROVIDER_LABELS: Record<AiProvider, string> = {
+  gemini: 'Google Gemini',
+  openai: 'OpenAI (GPT)',
+};
 export interface AnalysisResult { risks: Risk[]; soll: SollItem[]; waves: Wave[]; summary: string; source: 'ai' | 'fallback'; score?: number; scoreLabel?: string; }
 
 // Maßnahmen-Tracker

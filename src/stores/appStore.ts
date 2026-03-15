@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Project, WizardData, AnalysisResult, Task, TaskStatus, ChatMessage, AnalysisSnapshot, JiraConfig } from '@/types';
+import { Project, WizardData, AnalysisResult, Task, TaskStatus, ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig } from '@/types';
 
 interface AppStore {
   projects: Project[];
@@ -26,6 +26,13 @@ interface AppStore {
   addJiraConfig: (config: Omit<JiraConfig, 'id' | 'createdAt'>) => JiraConfig;
   updateJiraConfig: (id: string, config: Partial<Omit<JiraConfig, 'id' | 'createdAt'>>) => void;
   deleteJiraConfig: (id: string) => void;
+  // AI
+  aiConfigs: AiConfig[];
+  addAiConfig: (config: Omit<AiConfig, 'id' | 'createdAt'>) => AiConfig;
+  updateAiConfig: (id: string, config: Partial<Omit<AiConfig, 'id' | 'createdAt'>>) => void;
+  deleteAiConfig: (id: string) => void;
+  setActiveAiConfig: (id: string) => void;
+  getActiveAiConfig: () => AiConfig | undefined;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -131,6 +138,41 @@ export const useAppStore = create<AppStore>()(
       },
       deleteJiraConfig: (id) => {
         set(state => ({ jiraConfigs: state.jiraConfigs.filter(c => c.id !== id) }));
+      },
+
+      // ── AI ──
+      aiConfigs: [],
+      addAiConfig: (config) => {
+        const isFirst = get().aiConfigs.length === 0;
+        const newConfig: AiConfig = { ...config, id: Date.now().toString(), isActive: config.isActive || isFirst, createdAt: new Date().toISOString() };
+        set(state => ({
+          aiConfigs: config.isActive
+            ? [...state.aiConfigs.map(c => ({ ...c, isActive: false })), newConfig]
+            : [...state.aiConfigs, newConfig],
+        }));
+        return newConfig;
+      },
+      updateAiConfig: (id, config) => {
+        set(state => ({
+          aiConfigs: config.isActive
+            ? state.aiConfigs.map(c => ({ ...c, isActive: c.id === id, ...(c.id === id ? config : {}) }))
+            : state.aiConfigs.map(c => c.id === id ? { ...c, ...config } : c),
+        }));
+      },
+      deleteAiConfig: (id) => {
+        set(state => {
+          const remaining = state.aiConfigs.filter(c => c.id !== id);
+          if (remaining.length > 0 && !remaining.some(c => c.isActive)) {
+            remaining[0] = { ...remaining[0], isActive: true };
+          }
+          return { aiConfigs: remaining };
+        });
+      },
+      setActiveAiConfig: (id) => {
+        set(state => ({ aiConfigs: state.aiConfigs.map(c => ({ ...c, isActive: c.id === id })) }));
+      },
+      getActiveAiConfig: () => {
+        return get().aiConfigs.find(c => c.isActive);
       },
     }),
     { name: 'archplanner-store' }
