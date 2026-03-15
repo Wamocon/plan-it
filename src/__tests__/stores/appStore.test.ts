@@ -12,6 +12,29 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAppStore } from '@/stores/appStore';
 import type { AnalysisResult, WizardData } from '@/types';
 
+// Alle Supabase-DB-Aufrufe mocken – der Store-Test prüft nur den Zustand-State,
+// nicht die Datenbank-Persistenz (die wird in supabase-db.test.ts getestet).
+vi.mock('@/lib/supabase/db', () => ({
+  dbAddProject: vi.fn(),
+  dbUpdateAnalysis: vi.fn(),
+  dbSetAiPending: vi.fn(),
+  dbSetAiFailReason: vi.fn(),
+  dbDeleteProject: vi.fn(),
+  dbAddTask: vi.fn(),
+  dbUpdateTask: vi.fn(),
+  dbDeleteTask: vi.fn(),
+  dbAddChatMessage: vi.fn(),
+  dbClearChat: vi.fn(),
+  dbTakeSnapshot: vi.fn(),
+  dbAddJiraConfig: vi.fn(),
+  dbUpdateJiraConfig: vi.fn(),
+  dbDeleteJiraConfig: vi.fn(),
+  dbAddAiConfig: vi.fn(),
+  dbUpdateAiConfig: vi.fn(),
+  dbDeleteAiConfig: vi.fn(),
+  dbSetActiveAiConfig: vi.fn(),
+}));
+
 // ── Hilfsobjekte ─────────────────────────────────────────────
 const sampleAnalysis: AnalysisResult = {
   risks: [
