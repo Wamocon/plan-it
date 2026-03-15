@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-size: 17px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0d0809;
+  color: #fff;
+  /* Subtle red radial glow top-left */
+  background-image:
+    radial-gradient(ellipse 1400px 900px at -10% -10%, rgba(255,26,26,0.055) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 400px at 110% 110%, rgba(255,26,26,0.02) 0%, transparent 60%);
+}
+
+/* Subtle dot grid on main content area */
+.main-content {
+  background-image: radial-gradient(rgba(255,255,255,0.022) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Input & Select dark override */
+input, select, textarea {
+  background: #1c1010 !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+input::placeholder {
+  color: rgba(255,255,255,0.3) !important;
+}
+select option {
+  background: #1c1010;
+  color: #fff;
+}
+input:focus, select:focus {
+  border-color: rgba(255,26,26,0.6) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,26,26,0.1) !important;
+}
+
+/* Shimmer-Hover für Karten */
+.card-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.card-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.7s ease;
+  pointer-events: none;
+  z-index: 4;
+}
+.card-shimmer:hover::after {
+  left: 130%;
+}
+
+/* Impact-Zahlen Pop-Animation */
+@keyframes impactPop {
+  from { opacity: 0; transform: scale(0.6) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+.impact-pop {
+  animation: impactPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
