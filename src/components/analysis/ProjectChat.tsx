@@ -13,7 +13,7 @@ const SUGGESTIONS = [
   'Welches Risiko sollen wir zuerst angehen?',
 ];
 
-export function ProjectChat({ project }: { project: Project }) {
+export function ProjectChat({ project, apiKey }: { project: Project; apiKey: string }) {
   const addChatMessage = useAppStore(s => s.addChatMessage);
   const clearChat = useAppStore(s => s.clearChat);
   const messages = project.chatHistory || [];
@@ -47,7 +47,7 @@ export function ProjectChat({ project }: { project: Project }) {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project, question: q, history }),
+        body: JSON.stringify({ project, question: q, history, apiKey }),
       });
       const data = await res.json();
       if (res.status === 429) { setError('KI-Limit erreicht. Bitte später erneut versuchen.'); }

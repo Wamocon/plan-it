@@ -24,8 +24,11 @@ export function AnalysisView({ project }: { project: Project }) {
   const [reanalyzing, setReanalyzing] = useState(false);
   const [exporting, setExporting] = useState<'pdf' | 'word' | null>(null);
   const updateAnalysis = useAppStore(s => s.updateAnalysis);
+  const getActiveAiConfig = useAppStore(s => s.getActiveAiConfig);
   const { data, analysis, aiPending, aiFailReason } = project;
   const { risks, soll, waves, summary, source, score, scoreLabel } = analysis;
+
+  const activeAiConfig = getActiveAiConfig();
 
   const handleExportPdf = async () => {
     setExporting('pdf');
@@ -49,9 +52,14 @@ export function AnalysisView({ project }: { project: Project }) {
   };
 
   const reAnalyze = async () => {
+    if (!activeAiConfig) return;
     setReanalyzing(true);
     try {
-      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }) });
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data, apiKey: activeAiConfig.apiKey, provider: activeAiConfig.provider }),
+      });
       const result = await res.json();
       if (result.source === 'ai' || result.risks) updateAnalysis(project.id, { ...result, source: result.source || 'ai' });
     } catch (e) { console.error(e); }
@@ -126,22 +134,29 @@ export function AnalysisView({ project }: { project: Project }) {
       {/* Netzwerk-/sonstiger Fehler */}
       {!aiPending && aiFailReason === 'error' && (
         <div className="bg-amber-950/40 border border-amber-500/20 rounded-lg p-3 mb-3 flex items-center justify-between text-xs text-amber-300">
-          <span>⚡ KI-Analyse nicht verfügbar (Netzwerk). Regelbasierte Analyse wird angezeigt.</span>
-          <button onClick={reAnalyze} disabled={reanalyzing}
-            className="bg-purple-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold border-none cursor-pointer disabled:opacity-50 ml-3 flex-shrink-0 hover:bg-purple-700 transition-colors">
-            {reanalyzing ? '⏳ Läuft...' : '🔄 Erneut versuchen'}
-          </button>
+          <span>⚡ KI-Analyse nicht verfügbar. Regelbasierte Analyse wird angezeigt.</span>
+          {activeAiConfig && (
+            <button onClick={reAnalyze} disabled={reanalyzing}
+              className="bg-purple-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold border-none cursor-pointer disabled:opacity-50 ml-3 flex-shrink-0 hover:bg-purple-700 transition-colors">
+              {reanalyzing ? '⏳ Läuft...' : '🔄 Erneut versuchen'}
+            </button>
+          )}
         </div>
       )}
 
       {/* Fallback ohne Fehler */}
       {!aiPending && !aiFailReason && source === 'fallback' && (
         <div className="bg-amber-950/40 border border-amber-500/20 rounded-lg p-3 mb-3 flex items-center justify-between text-xs text-amber-300">
-          <span>📊 Regelbasierte Analyse. Mit einem API Key kannst du eine KI-Analyse durchführen.</span>
-          <button onClick={reAnalyze} disabled={reanalyzing}
-            className="bg-purple-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold border-none cursor-pointer disabled:opacity-50 ml-3 flex-shrink-0 hover:bg-purple-700 transition-colors">
-            {reanalyzing ? '⏳ Läuft...' : '🤖 KI-Analyse starten'}
-          </button>
+          {activeAiConfig
+            ? <span>📊 Regelbasierte Analyse. Starte eine KI-Analyse für bessere Ergebnisse.</span>
+            : <span>📊 Regelbasierte Analyse. <Link href="/settings" className="text-[#c084fc] hover:underline">API-Schlüssel hinterlegen</Link> für KI-Analyse.</span>
+          }
+          {activeAiConfig && (
+            <button onClick={reAnalyze} disabled={reanalyzing}
+              className="bg-purple-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold border-none cursor-pointer disabled:opacity-50 ml-3 flex-shrink-0 hover:bg-purple-700 transition-colors">
+              {reanalyzing ? '⏳ Läuft...' : '🤖 KI-Analyse starten'}
+            </button>
+          )}
         </div>
       )}
 
@@ -159,7 +174,7 @@ export function AnalysisView({ project }: { project: Project }) {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-xs font-semibold text-white/60 cursor-pointer hover:bg-white/10 hover:text-white/90 disabled:opacity-40 transition-all">
           {exporting === 'word' ? '⏳' : '📝'} Word Export
         </button>
-        {!aiPending && aiFailReason !== 'limit' && (
+        {!aiPending && aiFailReason !== 'limit' && activeAiConfig && (
           <button onClick={reAnalyze} disabled={reanalyzing}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 border border-purple-600 rounded-md text-xs font-semibold text-white cursor-pointer hover:bg-purple-700 disabled:opacity-40 transition-colors">
             {reanalyzing ? '⏳ Läuft...' : source === 'ai' ? '🔄 KI-Analyse neu starten' : '🤖 KI-Analyse starten'}
@@ -266,7 +281,23 @@ export function AnalysisView({ project }: { project: Project }) {
       {/* Tab: KI-Chat */}
       {tab === 'chat' && (
         <div className="rounded-xl border border-white/[0.07] overflow-hidden" style={{ background: 'rgba(14,6,6,0.7)' }}>
-          <ProjectChat project={project} />
+          {activeAiConfig
+            ? <ProjectChat project={project} apiKey={activeAiConfig.apiKey} />
+            : (
+              <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
+                <span className="text-4xl mb-4">🔑</span>
+                <p className="text-sm font-semibold text-white/50 mb-1">Kein KI-API-Schlüssel konfiguriert</p>
+                <p className="text-xs text-white/25 mb-4">
+                  Hinterlege einen API-Schlüssel in den Einstellungen, um den KI-Chat zu nutzen.
+                </p>
+                <Link href="/settings"
+                  className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all"
+                  style={{ background: 'rgba(192,132,252,0.12)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.25)' }}>
+                  ⚙️ Zu den Einstellungen
+                </Link>
+              </div>
+            )
+          }
         </div>
       )}
     </div>

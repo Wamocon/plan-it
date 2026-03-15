@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { wizardSteps } from '@/lib/wizard-steps';
 import { useAppStore } from '@/stores/appStore';
 import { WizardData } from '@/types';
@@ -13,6 +14,7 @@ export function WizardForm() {
   const updateAnalysis = useAppStore(s => s.updateAnalysis);
   const setAiPending = useAppStore(s => s.setAiPending);
   const setAiFailReason = useAppStore(s => s.setAiFailReason);
+  const getActiveAiConfig = useAppStore(s => s.getActiveAiConfig);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardData>({});
 
@@ -26,24 +28,36 @@ export function WizardForm() {
   const isLast = step === wizardSteps.length - 1;
   const update = (key: string, value: string) => setData(prev => ({ ...prev, [key]: value }));
 
+  const activeAiConfig = getActiveAiConfig();
+
   const handleNext = async () => {
     if (!filled) return;
     if (!isLast) { setStep(step + 1); return; }
 
     const { fallbackAnalysis } = await import('@/lib/fallback-analysis');
     const project = addProject(data, fallbackAnalysis(data));
-    setAiPending(project.id, true);
+
+    if (activeAiConfig) {
+      setAiPending(project.id, true);
+    }
     router.push(`/project/${project.id}`);
 
-    fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data }) })
-      .then(res => {
-        if (res.status === 429) { setAiFailReason(project.id, 'limit'); return null; }
-        if (!res.ok) { setAiFailReason(project.id, 'error'); return null; }
-        return res.json();
+    if (activeAiConfig) {
+      fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data, apiKey: activeAiConfig.apiKey, provider: activeAiConfig.provider }),
       })
-      .then(analysis => { if (analysis?.risks) updateAnalysis(project.id, { ...analysis, source: 'ai' }); })
-      .catch(() => setAiFailReason(project.id, 'error'))
-      .finally(() => setAiPending(project.id, false));
+        .then(res => {
+          if (res.status === 429) { setAiFailReason(project.id, 'limit'); return null; }
+          if (res.status === 401) { setAiFailReason(project.id, 'error'); return null; }
+          if (!res.ok) { setAiFailReason(project.id, 'error'); return null; }
+          return res.json();
+        })
+        .then(analysis => { if (analysis?.risks) updateAnalysis(project.id, { ...analysis, source: 'ai' }); })
+        .catch(() => setAiFailReason(project.id, 'error'))
+        .finally(() => setAiPending(project.id, false));
+    }
   };
 
   return (
@@ -72,6 +86,20 @@ export function WizardForm() {
 
       <h2 className="text-xl font-bold text-white mb-0.5">{current.icon} {current.title}</h2>
       <p className="text-white/40 text-sm mb-5">Schritt {step + 1} von {wizardSteps.length}</p>
+
+      {/* Hinweis wenn kein API-Key konfiguriert */}
+      {isLast && !activeAiConfig && (
+        <div className="mb-5 rounded-lg px-4 py-3 flex items-start gap-3 text-xs"
+          style={{ background: 'rgba(192,132,252,0.08)', border: '1px solid rgba(192,132,252,0.2)' }}>
+          <span className="text-[#c084fc] mt-0.5">🤖</span>
+          <span className="text-white/50">
+            Kein KI-API-Schlüssel konfiguriert – die Analyse wird regelbasiert durchgeführt.{' '}
+            <Link href="/settings" className="text-[#c084fc] hover:underline">
+              Jetzt in Einstellungen hinterlegen →
+            </Link>
+          </span>
+        </div>
+      )}
 
       {visibleFields.map(field => {
         if (field.type === 'text') return (
@@ -124,7 +152,7 @@ export function WizardForm() {
               ? 'bg-[#22aa66] shadow-[0_4px_18px_rgba(34,170,102,0.25)]'
               : 'bg-[#ff1a1a] shadow-[0_4px_18px_rgba(255,26,26,0.25)]'
           } ${filled ? 'opacity-100 cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}>
-          {isLast ? '📊 Analyse starten' : 'Weiter →'}
+          {isLast ? (activeAiConfig ? '🤖 KI-Analyse starten' : '📊 Analyse starten') : 'Weiter →'}
         </button>
       </div>
     </div>
