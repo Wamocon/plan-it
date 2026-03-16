@@ -97,11 +97,17 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
           EOF
 
-      - name: Coverage-HTML für GitHub Pages vorbereiten
+      - name: Coverage-Report in docs/coverage/ einbinden
+        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p docs/coverage
+          cp -r coverage/. docs/coverage/
+
+      - name: Produkthandbuch + Coverage für GitHub Pages vorbereiten
         if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: coverage/
+          path: docs/
 
       - name: Coverage-Bericht als Artefakt hochladen
         uses: actions/upload-artifact@v4
