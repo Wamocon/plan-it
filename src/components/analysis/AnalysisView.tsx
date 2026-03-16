@@ -98,12 +98,12 @@ export function AnalysisView({ project }: { project: Project }) {
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between mt-4 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between mt-4 mb-2 gap-2">
         <div>
           <h2 className="text-xl font-bold text-white mb-0.5">{data.projectName}</h2>
           <p className="text-white/40 text-sm">{data.clientName} · {risks.length} Risiken</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-2 flex-wrap">
           {score !== undefined && (
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${scoreStyle(score)}`}>
               Score {score}/100 · {scoreLabel}
@@ -183,10 +183,10 @@ export function AnalysisView({ project }: { project: Project }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0.5 border-b border-white/[0.08] mb-4">
+      <div className="flex gap-0.5 border-b border-white/[0.08] mb-4 overflow-x-auto">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="px-3 py-1.5 border-b-[3px] bg-transparent cursor-pointer text-xs font-medium transition-colors"
+            className="px-3 py-1.5 border-b-[3px] bg-transparent cursor-pointer text-xs font-medium transition-colors shrink-0 whitespace-nowrap"
             style={{
               borderBottomColor: tab === t.id ? t.color : 'transparent',
               color: tab === t.id ? t.color : 'rgba(255,255,255,0.35)',
@@ -199,7 +199,7 @@ export function AnalysisView({ project }: { project: Project }) {
 
       {/* Tab: Ist */}
       {tab === 'ist' && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {istRows.map(([k, v]) => (
             <div key={k} className="bg-[#16161a] p-2.5 rounded-md border border-white/[0.07]">
               <div className="text-[10px] text-white/30 font-bold uppercase tracking-wider">{k}</div>

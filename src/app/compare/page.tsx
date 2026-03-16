@@ -46,7 +46,7 @@ export default function ComparePage() {
       </div>
 
       {/* Selector */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         {[{ label: 'Projekt A', value: a, set: setA, other: b },
           { label: 'Projekt B', value: b, set: setB, other: a }].map(sel => (
           <div key={sel.label}>
@@ -65,9 +65,9 @@ export default function ComparePage() {
       {pA && pB && (
         <div className="space-y-4">
           {/* Score Comparison */}
-          <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-4 items-center">
             <ScoreCard project={pA} label="A" />
-            <div className="text-white/20 font-black text-2xl text-center">VS</div>
+            <div className="text-white/20 font-black text-2xl text-center hidden sm:block">VS</div>
             <ScoreCard project={pB} label="B" />
           </div>
 
@@ -99,7 +99,7 @@ export default function ComparePage() {
           </div>
 
           {/* Risk Comparison */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[{ project: pA, label: 'A' }, { project: pB, label: 'B' }].map(({ project, label }) => (
               <div key={label} className="rounded-xl border border-white/[0.07] overflow-hidden" style={{ background: 'rgba(14,6,6,0.7)' }}>
                 <div className="px-4 py-2.5 border-b border-white/[0.06]">
@@ -128,7 +128,7 @@ export default function ComparePage() {
             <div className="px-4 py-2.5 border-b border-white/[0.06]">
               <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Tech-Stack Vergleich</span>
             </div>
-            <div className="grid grid-cols-2 divide-x divide-white/[0.06]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x divide-white/[0.06]">
               {[{ project: pA, label: 'A' }, { project: pB, label: 'B' }].map(({ project, label }) => {
                 const stack = (project.data.primaryStack || '').split(',').filter(Boolean);
                 const db = (project.data.database || '').split(',').filter(Boolean);

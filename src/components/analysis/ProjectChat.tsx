@@ -64,7 +64,7 @@ export function ProjectChat({ project, apiKey }: { project: Project; apiKey: str
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0" style={{ maxHeight: '620px' }}>
+    <div className="flex flex-col h-full min-h-0" style={{ maxHeight: 'min(620px, calc(100dvh - 180px))' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.07]"
         style={{ background: 'rgba(88,28,135,0.15)' }}>
