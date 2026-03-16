@@ -37,7 +37,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${`
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${
                 active
                   ? 'bg-[#ff1a1a]/12 text-white border border-[#ff1a1a]/20'
                   : 'text-white/45 hover:text-white/80 hover:bg-white/[0.05]'
@@ -103,7 +103,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   key={p.id}
                   href={`/project/${p.id}`}
                   onClick={onNavigate}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg no-underline transition-all group ${`
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg no-underline transition-all group ${
                     active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'
                   }`}
                 >
