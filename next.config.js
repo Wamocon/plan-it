@@ -1,3 +1,6 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { output: 'standalone' };
+// Production domain: https://a-plan.io
+const nextConfig = {
+  output: 'standalone',
+};
 module.exports = nextConfig;

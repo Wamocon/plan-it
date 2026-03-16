@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://a-plan.io'),
   title: 'Architekturplaner',
   description: 'Unternehmensarchitektur planen, analysieren und dokumentieren',
 };
