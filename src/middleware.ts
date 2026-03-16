@@ -1,45 +1,8 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  // Ohne Supabase-Konfiguration (lokaler Docker-Betrieb) → direkt durchlassen
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return NextResponse.next({ request });
-  }
-
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Session auffrischen – wichtig: kein Code zwischen createServerClient und getUser()
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Nicht eingeloggte User zur Login-Seite umleiten (außer Login/Auth-Routen)
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/auth');
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
-
-  if (!user && !isAuthRoute && !isApiRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/auth/login';
-    return NextResponse.redirect(url);
-  }
-
-  return supabaseResponse;
+  // No auth required in local/LAN mode – all requests pass through
+  return NextResponse.next({ request });
 }
 
 export const config = {
