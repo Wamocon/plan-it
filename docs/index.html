@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArchPlanner – Produkthandbuch | WAMOCON</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:       #ff1a1a;
+      --red-dark:  #c41010;
+      --red-glow:  rgba(255,26,26,0.18);
+      --green:     #22aa66;
+      --amber:     #f59e0b;
+      --blue:      #60a5fa;
+      --purple:    #c084fc;
+      --bg-page:   #0b0808;
+      --bg-card:   rgba(22,10,10,0.92);
+      --bg-code:   #160a0a;
+      --border:    rgba(255,255,255,0.07);
+      --text:      #e8e0e0;
+      --text-muted:#9a8a8a;
+      --text-dim:  rgba(255,255,255,0.35);
+      --navy:      #1b3a5c;
+      --wmc-grad:  linear-gradient(135deg, #2a0606 0%, #1a0303 40%, #2c1a1a 75%, #e8dada 100%);
+    }
+
+    html { scroll-behavior: smooth; font-size: 15px; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-page);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    /* ── Print ─────────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; color: #111; font-size: 11pt; }
+      .no-print, nav, #toc-sidebar { display: none !important; }
+      .page-header { background: var(--navy) !important; -webkit-print-color-adjust: exact; }
+      a { color: inherit; text-decoration: none; }
+      .card { border: 1px solid #ccc; background: #fff !important; color: #111 !important; box-shadow: none; }
+      table { page-break-inside: avoid; }
+      h2, h3 { page-break-after: avoid; }
+    }
+
+    /* ── Page Header ──────────────────────────────────────────── */
+    .page-header {
+      background: var(--wmc-grad);
+      border-bottom: 2px solid var(--red);
+      box-shadow: 0 2px 32px rgba(255,26,26,0.15);
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .page-header .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-mark {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: linear-gradient(135deg, #ff1a1a, #c41010);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 900; color: #fff;
+      box-shadow: 0 3px 14px rgba(255,26,26,0.4);
+      flex-shrink: 0;
+    }
+    .brand-name { color: #fff; font-weight: 700; font-size: 1rem; line-height: 1.2; }
+    .brand-sub  { color: rgba(255,255,255,0.45); font-size: 0.65rem; letter-spacing: 0.06em; }
+    .header-meta { color: rgba(255,255,255,0.4); font-size: 0.7rem; text-align: right; }
+    .header-meta strong { color: rgba(255,255,255,0.7); }
+
+    /* ── Layout ──────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 64px);
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* ── Sidebar / TOC ──────────────────────────────────────── */
+    #toc-sidebar {
+      position: sticky;
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+      padding: 1.5rem 0 2rem;
+      border-right: 1px solid var(--border);
+      background: rgba(10,4,4,0.6);
+      scrollbar-width: thin;
+      scrollbar-color: var(--red) transparent;
+    }
+    #toc-sidebar::-webkit-scrollbar { width: 4px; }
+    #toc-sidebar::-webkit-scrollbar-track { background: transparent; }
+    #toc-sidebar::-webkit-scrollbar-thumb { background: var(--red-dark); border-radius: 2px; }
+
+    .toc-title {
+      font-size: 0.6rem; font-weight: 800; letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.2); text-transform: uppercase;
+      padding: 0 1.4rem 0.5rem; margin-bottom: 0.25rem;
+    }
+    .toc-link {
+      display: block; padding: 0.3rem 1.4rem;
+      color: var(--text-muted); text-decoration: none;
+      font-size: 0.78rem; border-left: 2px solid transparent;
+      transition: all 0.15s; line-height: 1.4;
+    }
+    .toc-link:hover   { color: #fff; border-left-color: var(--red); background: rgba(255,26,26,0.06); }
+    .toc-link.l1      { font-weight: 700; color: rgba(255,255,255,0.7); font-size: 0.8rem; margin-top: 0.6rem; }
+    .toc-link.l2      { padding-left: 2.2rem; }
+    .toc-link.l3      { padding-left: 3rem; font-size: 0.72rem; }
+    .toc-divider      { height: 1px; background: var(--border); margin: 0.6rem 1.4rem; }
+
+    /* ── Main Content ─────────────────────────────────────────── */
+    main { padding: 2.5rem 3rem 4rem; max-width: 960px; }
+
+    /* ── Cover ──────────────────────────────────────────────── */
+    .cover {
+      border: 1px solid rgba(255,26,26,0.3);
+      border-radius: 16px;
+      background: linear-gradient(160deg, rgba(40,10,10,0.8) 0%, rgba(20,5,5,0.95) 100%);
+      padding: 3rem;
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: '';
+      position: absolute; top: 0; right: 0;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(255,26,26,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .doc-type {
+      font-size: 0.65rem; font-weight: 800; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--red);
+      margin-bottom: 0.7rem;
+    }
+    .cover h1 { font-size: 2.4rem; font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 0.5rem; }
+    .cover-sub { font-size: 1.15rem; color: rgba(255,255,255,0.5); margin-bottom: 2rem; }
+    .cover-meta {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .meta-item { }
+    .meta-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 0.2rem; }
+    .meta-value { font-size: 0.9rem; color: rgba(255,255,255,0.8); font-weight: 600; }
+
+    /* ── Headings ─────────────────────────────────────────────── */
+    h2 {
+      font-size: 1.55rem; font-weight: 900; color: #fff;
+      margin: 3rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid rgba(255,26,26,0.35);
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    h2 .ch-num { color: var(--red); font-size: 1rem; font-weight: 600; min-width: 2rem; }
+    h3 { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.88); margin: 2rem 0 0.75rem; }
+    h4 { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin: 1.25rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ── Paragraphs & Lists ──────────────────────────────────── */
+    p  { margin-bottom: 0.85rem; color: rgba(255,255,255,0.75); }
+    ul, ol { padding-left: 1.4rem; margin-bottom: 0.85rem; }
+    li { margin-bottom: 0.3rem; color: rgba(255,255,255,0.75); }
+    li::marker { color: var(--red); }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .kpi {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      text-align: center;
+    }
+    .kpi-val  { font-size: 1.8rem; font-weight: 900; line-height: 1; margin-bottom: 0.3rem; }
+    .kpi-lab  { font-size: 0.68rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* ── Tables ─────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; margin-bottom: 1.25rem; border-radius: 10px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { background: rgba(255,26,26,0.12); }
+    thead th { padding: 0.65rem 1rem; text-align: left; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); border-bottom: 1px solid rgba(255,26,26,0.2); }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,26,26,0.04); }
+    tbody td { padding: 0.6rem 1rem; color: rgba(255,255,255,0.75); vertical-align: top; }
+    tbody td:first-child { font-weight: 600; color: rgba(255,255,255,0.9); }
+
+    /* ── Badges ─────────────────────────────────────────────── */
+    .badge {
+      display: inline-block; padding: 0.2rem 0.55rem;
+      border-radius: 20px; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .badge-red    { background: rgba(255,26,26,0.18); color: #ff6b6b; border: 1px solid rgba(255,26,26,0.3); }
+    .badge-green  { background: rgba(34,170,102,0.15); color: #4ade80; border: 1px solid rgba(34,170,102,0.3); }
+    .badge-amber  { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .badge-blue   { background: rgba(96,165,250,0.15); color: #93c5fd; border: 1px solid rgba(96,165,250,0.3); }
+    .badge-purple { background: rgba(192,132,252,0.15); color: #d8b4fe; border: 1px solid rgba(192,132,252,0.3); }
+    .badge-gray   { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.1); }
+
+    /* ── Status Blocks ──────────────────────────────────────── */
+    .info-box {
+      border-radius: 10px; padding: 1rem 1.25rem;
+      margin-bottom: 1rem; border-left: 3px solid;
+    }
+    .info-box.green  { background: rgba(34,170,102,0.08); border-color: var(--green); }
+    .info-box.amber  { background: rgba(245,158,11,0.08); border-color: var(--amber); }
+    .info-box.red    { background: rgba(255,26,26,0.08);  border-color: var(--red);   }
+    .info-box.blue   { background: rgba(96,165,250,0.08); border-color: var(--blue);  }
+    .info-box.purple { background: rgba(192,132,252,0.08); border-color: var(--purple); }
+    .info-box-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; }
+    .info-box.green  .info-box-title { color: var(--green); }
+    .info-box.amber  .info-box-title { color: var(--amber); }
+    .info-box.red    .info-box-title { color: #ff6b6b; }
+    .info-box.blue   .info-box-title { color: var(--blue); }
+    .info-box.purple .info-box-title { color: var(--purple); }
+    .info-box p { margin-bottom: 0; font-size: 0.85rem; }
+
+    /* ── Code ──────────────────────────────────────────────── */
+    code {
+      font-family: 'Consolas', 'Monaco', 'Cascadia Code', monospace;
+      font-size: 0.8em;
+      background: rgba(255,26,26,0.1);
+      color: #ff9090;
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+    pre code { background: none; color: #e0c8c8; padding: 0; font-size: 1em; }
+
+    /* ── Score Meter ─────────────────────────────────────────── */
+    .score-meter { display: flex; align-items: center; gap: 1rem; margin: 0.5rem 0 1rem; }
+    .score-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+    .score-fill { height: 100%; border-radius: 3px; }
+    .score-num { font-size: 0.8rem; font-weight: 700; min-width: 40px; text-align: right; }
+
+    /* ── Arch Diagram ─────────────────────────────────────────── */
+    .arch-diagram {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem; margin: 1rem 0 1.5rem;
+    }
+    .arch-layer {
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.75rem 1rem;
+      background: var(--bg-card);
+      text-align: center;
+    }
+    .arch-layer-title { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.5rem; }
+    .arch-layer-item  { font-size: 0.78rem; color: rgba(255,255,255,0.7); padding: 0.2rem 0; }
+
+    /* ── Audit Matrix ─────────────────────────────────────────── */
+    .audit-cell-ok     { color: var(--green);  font-weight: 700; }
+    .audit-cell-warn   { color: var(--amber);  font-weight: 700; }
+    .audit-cell-open   { color: var(--text-muted); }
+
+    /* ── Step List ───────────────────────────────────────────── */
+    .step-list { list-style: none; padding: 0; counter-reset: steps; }
+    .step-list li {
+      counter-increment: steps;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+    }
+    .step-list li:last-child { border-bottom: none; }
+    .step-list li::before {
+      content: counter(steps);
+      min-width: 26px; height: 26px;
+      background: rgba(255,26,26,0.15); border: 1px solid rgba(255,26,26,0.3);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 800; color: var(--red);
+      flex-shrink: 0; margin-top: 0.05rem;
+    }
+
+    /* ── Tab Illus ───────────────────────────────────────────── */
+    .tab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.6rem; margin: 1rem 0; }
+    .tab-item {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.65rem 0.9rem;
+    }
+    .tab-item-icon { margin-bottom: 0.3rem; font-size: 1.1rem; }
+    .tab-item-name { font-size: 0.82rem; font-weight: 700; color: rgba(255,255,255,0.85); }
+    .tab-item-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem; }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .page-footer {
+      background: rgba(10,4,4,0.8);
+      border-top: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.72rem;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      #toc-sidebar { display: none; }
+      main { padding: 1.5rem 1.25rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── PAGE HEADER ─────────────────────────────────────────── -->
+<header class="page-header">
+  <a class="brand" href="#">
+    <div class="logo-mark">A</div>
+    <div>
+      <div class="brand-name">Architekturplaner</div>
+      <div class="brand-sub">planen · analysieren · dokumentieren</div>
+    </div>
+  </a>
+  <div class="header-meta">
+    <strong>Produkthandbuch</strong><br>
+    Version 1.0 · März 2026 · WAMOCON
+  </div>
+</header>
+
+<!-- ── MAIN LAYOUT ─────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- ── SIDEBAR TOC ──────────────────────────────────────── -->
+  <nav id="toc-sidebar">
+    <div class="toc-title">Inhalt</div>
+
+    <a class="toc-link l1" href="#executive-summary">1&nbsp; Executive Summary</a>
+    <a class="toc-link l1" href="#produktuebersicht">2&nbsp; Produktübersicht</a>
+    <a class="toc-link l2" href="#pu-beschreibung">2.1 Produktbeschreibung</a>
+    <a class="toc-link l2" href="#pu-zielgruppen">2.2 Zielgruppen</a>
+    <a class="toc-link l2" href="#pu-features">2.3 Funktionsübersicht</a>
+
+    <a class="toc-link l1" href="#benutzerhandbuch">3&nbsp; Benutzerhandbuch</a>
+    <a class="toc-link l2" href="#bh-auth">3.1 Authentifizierung</a>
+    <a class="toc-link l2" href="#bh-dashboard">3.2 Dashboard</a>
+    <a class="toc-link l2" href="#bh-wizard">3.3 Projekt anlegen</a>
+    <a class="toc-link l2" href="#bh-analyse">3.4 Analyseergebnis</a>
+    <a class="toc-link l2" href="#bh-tasks">3.5 Aufgaben-Tracker</a>
+    <a class="toc-link l2" href="#bh-jira">3.6 Jira-Integration</a>
+    <a class="toc-link l2" href="#bh-chat">3.7 KI-Chat</a>
+    <a class="toc-link l2" href="#bh-compare">3.8 Projektvergleich</a>
+    <a class="toc-link l2" href="#bh-export">3.9 Export</a>
+    <a class="toc-link l2" href="#bh-settings">3.10 Einstellungen</a>
+
+    <a class="toc-link l1" href="#technische-architektur">4&nbsp; Technische Architektur</a>
+    <a class="toc-link l2" href="#ta-uebersicht">4.1 Systemübersicht</a>
+    <a class="toc-link l2" href="#ta-frontend">4.2 Frontend</a>
+    <a class="toc-link l2" href="#ta-backend">4.3 Backend / API</a>
+    <a class="toc-link l2" href="#ta-ki">4.4 KI-Integration</a>
+    <a class="toc-link l2" href="#ta-persistenz">4.5 Datenpersistenz</a>
+    <a class="toc-link l2" href="#ta-auth">4.6 Authentifizierung</a>
+    <a class="toc-link l2" href="#ta-schema">4.7 Datenbankschema</a>
+    <a class="toc-link l2" href="#ta-rls">4.8 Row Level Security</a>
+
+    <a class="toc-link l1" href="#ki-analyse-engine">5&nbsp; KI-Analyse-Engine</a>
+    <a class="toc-link l2" href="#ki-gemini">5.1 Google Gemini 2.0</a>
+    <a class="toc-link l2" href="#ki-fallback">5.2 Regelbasierter Fallback</a>
+    <a class="toc-link l2" href="#ki-scoring">5.3 Scoring-Modell</a>
+
+    <a class="toc-link l1" href="#jira-integration">6&nbsp; Jira-Integration</a>
+    <a class="toc-link l1" href="#export">7&nbsp; Export-Funktionen</a>
+    <a class="toc-link l1" href="#deployment">8&nbsp; Deployment &amp; CI/CD</a>
+    <a class="toc-link l2" href="#dep-cicd">8.1 GitHub Actions</a>
+    <a class="toc-link l2" href="#dep-pages">8.2 GitHub Pages</a>
+    <a class="toc-link l2" href="#dep-docker">8.3 Docker / Lokal</a>
+
+    <a class="toc-link l1" href="#sicherheit">9&nbsp; Sicherheit</a>
+    <a class="toc-link l1" href="#k6-synthese">10 K6-Synthese</a>
+    <a class="toc-link l1" href="#tiefenanalyse">11 Tiefenanalyse &amp; Audit</a>
+    <a class="toc-link l1" href="#management-fazit">12 Management-Fazit</a>
+
+    <div class="toc-divider"></div>
+    <a class="toc-link" href="coverage/index.html" target="_blank">📊 Coverage Report →</a>
+  </nav>
+
+  <!-- ── MAIN ─────────────────────────────────────────────── -->
+  <main>
+
+    <!-- ── COVER ─────────────────────────────────────────── -->
+    <div class="cover">
+      <div class="doc-type">Produkthandbuch · Vertraulich · WAMOCON</div>
+      <h1>ArchPlanner</h1>
+      <div class="cover-sub">Unternehmensarchitektur planen, analysieren und dokumentieren</div>
+      <div class="cover-meta">
+        <div class="meta-item"><div class="meta-label">Version</div><div class="meta-value">1.0.0</div></div>
+        <div class="meta-item"><div class="meta-label">Datum</div><div class="meta-value">März 2026</div></div>
+        <div class="meta-item"><div class="meta-label">Herausgeber</div><div class="meta-value">WAMOCON</div></div>
+        <div class="meta-item"><div class="meta-label">Status</div><div class="meta-value"><span class="badge badge-green">Produktiv</span></div></div>
+        <div class="meta-item"><div class="meta-label">Tech-Basis</div><div class="meta-value">Next.js · Supabase · Gemini</div></div>
+        <div class="meta-item"><div class="meta-label">Dokumenttyp</div><div class="meta-value">Produkt- &amp; Technische Dokumentation</div></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         1. EXECUTIVE SUMMARY
+    ════════════════════════════════════════════════════════ -->
+    <section id="executive-summary">
+      <h2><span class="ch-num">1</span> Executive Summary</h2>
+
+      <p>ArchPlanner ist ein webbasiertes Analyse- und Planungswerkzeug für Unternehmensarchitektur, entwickelt von WAMOCON. Die Anwendung richtet sich an IT-Architekten, Projektleiter und technische Führungskräfte, die den Ist-Zustand ihrer Systemlandschaft strukturiert erfassen, KI-gestützt bewerten und einen konkreten Umsetzungsplan ableiten wollen.</p>
+
+      <div class="card-grid">
+        <div class="kpi"><div class="kpi-val" style="color:var(--red)">4</div><div class="kpi-lab">Wizard-Schritte</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--purple)">5</div><div class="kpi-lab">KI-Analyse-Phasen</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--blue)">8</div><div class="kpi-lab">Analyse-Tabs</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--green)">2</div><div class="kpi-lab">Export-Formate</div></div>
+      </div>
+
+      <p>Kernleistung der Anwendung ist ein fünfphasiger KI-Analyseprozess auf Basis von Google Gemini 2.0 Flash, der individuelle Risikobewertungen, Soll-Architekturempfehlungen und einen 5-Wellen-Umsetzungsplan generiert. Für den Betrieb ohne KI-API-Schlüssel steht ein vollständig lokal ausführbarer, regelbasierter Fallback bereit.</p>
+
+      <p>Die Datenpersistenz ist in zwei Modi ausgeführt: lokal via Zustand/localStorage (ohne Backend) und cloud-basiert via Supabase (mit optionaler Authentifizierung). Jira-Integration erlaubt das direkte Anlegen von Vorgängen aus dem integrierten Aufgaben-Tracker. Analyseergebnisse sind als PDF und Word exportierbar.</p>
+
+      <div class="info-box green">
+        <div class="info-box-title">Produktstatus</div>
+        <p>ArchPlanner befindet sich im produktiven Betrieb (Version 1.0.0). Alle Kernfunktionen sind implementiert und getestet. CI/CD via GitHub Actions ist aktiv; Testergebnisse und Coverage-Berichte werden automatisch auf GitHub Pages publiziert.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         2. PRODUKTÜBERSICHT
+    ════════════════════════════════════════════════════════ -->
+    <section id="produktuebersicht">
+      <h2><span class="ch-num">2</span> Produktübersicht</h2>
+
+      <h3 id="pu-beschreibung">2.1 Produktbeschreibung</h3>
+      <p>ArchPlanner adressiert ein strukturelles Problem in wachsenden IT-Organisationen: Die Architekturstandsaufnahme ist zeitaufwendig, inkonsistent und führt selten zu einem priorisierten Handlungsplan. ArchPlanner löst dieses Problem durch einen strukturierten, KI-gestützten Erfassungs- und Analyseprozess, der in wenigen Minuten einen belastbaren Architekturbericht erzeugt.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Attribut</th><th>Wert</th></tr></thead>
+          <tbody>
+            <tr><td>Produktname</td><td>ArchPlanner</td></tr>
+            <tr><td>Produktart</td><td>Web-Applikation (Server-Side Rendering + Client-Side Interaktion)</td></tr>
+            <tr><td>Herausgeber</td><td>WAMOCON</td></tr>
+            <tr><td>Version</td><td>1.0.0</td></tr>
+            <tr><td>Lizenz</td><td>Proprietär / WAMOCON</td></tr>
+            <tr><td>Deployment</td><td>Vercel (Produktiv), lokal (Docker/Node.js)</td></tr>
+            <tr><td>Primäre URL</td><td>a-plan.io</td></tr>
+            <tr><td>Sprache</td><td>Deutsch</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="pu-zielgruppen">2.2 Zielgruppen</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Zielgruppe</th><th>Nutzungsschwerpunkt</th></tr></thead>
+          <tbody>
+            <tr><td>IT-Architekten</td><td>Strukturierte Ist-Aufnahme, Risikobewertung, Soll-Definition</td></tr>
+            <tr><td>CTO / IT-Leitung</td><td>Management-Dashboard, Score-Monitoring, Entscheidungsgrundlage</td></tr>
+            <tr><td>Projektleiter</td><td>Umsetzungsplanung (5-Wellen), Aufgaben-Tracker, Export</td></tr>
+            <tr><td>Entwicklungsteams</td><td>Technische Bestandsaufnahme, Jira-Integration, Gap-Analyse</td></tr>
+            <tr><td>Unternehmensberater</td><td>Mehrprojektvergleich, PDF/Word-Reporting, Scoring</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="pu-features">2.3 Funktionsübersicht</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Funktion</th><th>Beschreibung</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>4-Schritte-Wizard</td><td>Strukturierte Erfassung von Ist-Architektur in den Bereichen Grundlagen, Tech-Stack, Prozesse, Infrastruktur</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>KI-Analyse (Gemini)</td><td>Fünfphasige KI-Analyse via Google Gemini 2.0 Flash</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Regelbasierter Fallback</td><td>Lokale Analyse ohne API-Key, vollständig funktionsfähig</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Risiko-Heatmap</td><td>SVG-Matrix Impact × Wahrscheinlichkeit</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Soll-Architektur</td><td>KI-generierte Zielarchitekturempfehlung</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>5-Wellen-Plan</td><td>Priorisierter Umsetzungsplan mit Zeitschätzungen</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Aufgaben-Tracker</td><td>Status-Verwaltung (Offen / In Arbeit / Erledigt) mit Notizen</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Jira-Integration</td><td>Direkte Vorgangserstellung in konfigurierbaren Jira-Instanzen</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>KI-Chat</td><td>Kontextbezogener Dialog zu einem Analyseergebnis</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Score-Trend</td><td>Historische Entwicklung des Architektur-Scores (Snapshots)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Projektvergleich</td><td>Side-by-Side-Vergleich zweier Projekte inkl. Tech-Stack-Diff</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>PDF-Export</td><td>Vollständiger Analysebericht als PDF (jsPDF)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Word-Export</td><td>Analysebericht als DOCX (docx-Library)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Supabase-Persistenz</td><td>Optionale Cloud-Speicherung mit Authentifizierung</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Authentifizierung</td><td>E-Mail/Passwort + Magic Link (Supabase Auth)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Multi-KI-Konfiguration</td><td>Mehrere API-Keys (Gemini / OpenAI) verwaltbar</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         3. BENUTZERHANDBUCH
+    ════════════════════════════════════════════════════════ -->
+    <section id="benutzerhandbuch">
+      <h2><span class="ch-num">3</span> Benutzerhandbuch</h2>
+
+      <h3 id="bh-auth">3.1 Authentifizierung</h3>
+      <p>Die Authentifizierung in ArchPlanner ist optional, jedoch erforderlich für die Cloud-Persistenz von Projekten, Aufgaben und Konfigurationen. Ohne Supabase-Konfiguration läuft die App im lokalen Modus ohne Authentifizierungspflicht.</p>
+
+      <h4>Anmeldeoptionen</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Methode</th><th>Funktionsweise</th><th>Voraussetzung</th></tr></thead>
+          <tbody>
+            <tr><td>E-Mail + Passwort</td><td>Direktanmeldung mit gespeichertem Passwort</td><td>Registriertes Konto</td></tr>
+            <tr><td>Magic Link</td><td>Einmaliger Bestätigungslink per E-Mail; kein Passwort erforderlich</td><td>Gültige E-Mail-Adresse</td></tr>
+            <tr><td>Registrierung</td><td>Neues Konto anlegen; E-Mail-Bestätigung über Link</td><td>Gültige E-Mail-Adresse</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Nach erfolgreicher Authentifizierung werden alle eigenen Projekte, Aufgaben, Snapshots, Chat-Verläufe und Konfigurationen aus der Supabase-Datenbank geladen. Die Middleware leitet nicht authentifizierte Nutzerinnen und Nutzer automatisch auf <code>/auth/login</code> um.</p>
+
+      <h3 id="bh-dashboard">3.2 Dashboard</h3>
+      <p>Das Dashboard ist der zentrale Einstiegspunkt. Es zeigt eine Übersicht aller angelegten Projekte sowie aggregierte Kennzahlen.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>KPI-Karte</th><th>Bedeutung</th></tr></thead>
+          <tbody>
+            <tr><td>Projekte gesamt</td><td>Anzahl aller gespeicherten Projekte</td></tr>
+            <tr><td>Ø Architektur-Score</td><td>Durchschnittlicher Score aller Projekte (0–100); farblich codiert</td></tr>
+            <tr><td>Hohe Risiken</td><td>Gesamtzahl der als „hoch" bewerteten Risiken über alle Projekte</td></tr>
+            <tr><td>KI-Analysen</td><td>Verhältnis KI-basierter zu regelbasierten Analysen</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Klick auf eine Projektkarte öffnet die Detailansicht mit Analyseergebnis. Über den Button <strong>+ Neues Projekt</strong> wird der Erfassungs-Wizard gestartet.</p>
+
+      <h3 id="bh-wizard">3.3 Projekt anlegen (4-Schritte-Wizard)</h3>
+      <p>Der Wizard führt in vier Schritten durch die Erfassungsfelder. Fortgeschrittene Schritte werden durch Klick auf die Schrittnummern erreichbar, sobald sie abgeschlossen sind.</p>
+
+      <ol class="step-list">
+        <li>
+          <div>
+            <strong>Grundlagen</strong> — Projektname, Kundenname, Teamgröße, aktuelle App-Anzahl, geplante App-Anzahl (Ziel). Alle Felder unterstützen Freitexteingabe als „Andere..."-Option.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Tech-Stack</strong> — Mehrfachauswahl von primärem Tech-Stack, Datenbanktechnologien, Hosting-Optionen sowie Erfassung von Legacy-Systemen (mit optionalem Freitext). Die Auswahl beeinflusst direkt die KI-Analyse und den Fallback.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Prozesse</strong> — Code-Sharing-Strategie, Design-System-Reifegrad, CI/CD-Abdeckung, Testing-Abdeckung. Mehrfachauswahl mit vordefinierten Optionen.
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Infrastruktur</strong> — Monitoring-Abdeckung, Dokumentationsstand, Branching-Strategie, Onboarding-Dauer. Nach Abschluss dieses Schritts wird die Analyse gestartet.
+          </div>
+        </li>
+      </ol>
+
+      <div class="info-box blue">
+        <div class="info-box-title">Kein API-Key konfiguriert</div>
+        <p>Ist kein KI-API-Key in den Einstellungen hinterlegt, wird im letzten Schritt ein Hinweis angezeigt. Die Analyse wird regelbasiert durchgeführt. Ein API-Key kann jederzeit nachträglich in den Einstellungen ergänzt werden, die Analyse kann anschließend manuell neu gestartet werden.</p>
+      </div>
+
+      <h3 id="bh-analyse">3.4 Analyseergebnis-Ansicht</h3>
+      <p>Nach Abschluss des Wizards öffnet sich automatisch die Projektdetailseite. Der Architektur-Score wird als Badge mit Farbcodierung angezeigt: grün (≥ 71), orange (51–70), rot (≤ 50).</p>
+
+      <p>Die Analyseergebnisse sind auf acht Tabs verteilt:</p>
+
+      <div class="tab-grid">
+        <div class="tab-item">
+          <div class="tab-item-icon">📋</div>
+          <div class="tab-item-name">Ist-Zustand</div>
+          <div class="tab-item-desc">Score, Bewertung, Technologie-Stack-Übersicht, Zusammenfassung</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-item-icon">⚠️</div>
+          <div class="tab-item-name">Risiken</div>
+          <div class="tab-item-desc">Risikokatalog nach Schweregrad mit Empfehlungen</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-item-icon">🔥</div>
+          <div class="tab-item-name">Heatmap</div>
+          <div class="tab-item-desc">SVG-Risikomatrix Impact × Wahrscheinlichkeit</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-item-icon">🎯</div>
+          <div class="tab-item-name">Soll-Zustand</div>
+          <div class="tab-item-desc">Empfohlene Zielarchitektur mit Begründungen</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-item-icon">🌊</div>
+          <div class="tab-item-name">Umsetzungswellen</div>
+          <div class="tab-item-desc">5 Wellen mit Deliverables und Zeitrahmen</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-item-icon">✅</div>
+          <div class="tab-item-name">Aufgaben</div>
+          <div class="tab-item-desc">Maßnahmen-Tracker, Fortschrittsbalken, Jira-Push</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-item-icon">📈</div>
+          <div class="tab-item-name">Score-Trend</div>
+          <div class="tab-item-desc">Historische Score-Entwicklung (Snapshots)</div>
+        </div>
+        <div class="tab-item">
+          <div class="tab-item-icon">🤖</div>
+          <div class="tab-item-name">KI-Chat</div>
+          <div class="tab-item-desc">Kontextbezogene Rückfragen zur Analyse</div>
+        </div>
+      </div>
+
+      <h4>Re-Analyse</h4>
+      <p>Über den Button <strong>Re-Analysieren</strong> in der Projektansicht kann die KI-Analyse jederzeit neu gestartet werden. Dabei wird automatisch ein Snapshot des bisherigen Scores gespeichert, sodass die Entwicklung im Trend-Tab nachvollziehbar bleibt.</p>
+
+      <h3 id="bh-tasks">3.5 Aufgaben-Tracker</h3>
+      <p>Im Tab <strong>Aufgaben</strong> können Maßnahmen aus den Umsetzungswellen als Aufgaben angelegt und verwaltet werden.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Status</th><th>Symbol</th><th>Bedeutung</th></tr></thead>
+          <tbody>
+            <tr><td>Offen</td><td>○ (weiß)</td><td>Aufgabe noch nicht begonnen</td></tr>
+            <tr><td>In Arbeit</td><td>⏱ (orange)</td><td>Aufgabe aktiv in Bearbeitung</td></tr>
+            <tr><td>Erledigt</td><td>✓ (grün)</td><td>Aufgabe abgeschlossen</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Klick auf das Status-Icon wechselt zyklisch den Status. Pro Aufgabe kann eine Notiz hinterlegt werden. Der Gesamtfortschritt über alle Aufgaben eines Projekts wird als Balken und Prozentzahl angezeigt. Aufgaben können mit einem Jira-Vorgang verknüpft werden (siehe 3.6).</p>
+
+      <h3 id="bh-jira">3.6 Jira-Integration</h3>
+      <p>ArchPlanner erlaubt die direkte Erzeugung von Jira-Vorgängen aus dem Aufgaben-Tracker. Mehrere Jira-Instanzen können gleichzeitig konfiguriert sein.</p>
+
+      <ul>
+        <li>Konfiguration in <strong>Einstellungen → Jira-Verbindungen</strong></li>
+        <li>Benötigte Angaben: Jira-URL, E-Mail, API-Token, Projektschlüssel, Vorgangstyp</li>
+        <li>Verbindungstest direkt in der Einstellungsseite</li>
+        <li>Beim Push kann aus allen konfigurierten Instanzen gewählt werden</li>
+        <li>Erstellter Vorgang wird mit Schlüssel und direktem Link in der Aufgabe gespeichert</li>
+      </ul>
+
+      <div class="info-box amber">
+        <div class="info-box-title">Sicherheitshinweis</div>
+        <p>Jira API-Token werden in der Supabase-Datenbank gespeichert. Die Verbindung erfolgt server-seitig über eine Next.js API-Route. API-Token werden nicht im Client-Speicher (localStorage) exponiert, sofern Supabase-Persistenz aktiviert ist.</p>
+      </div>
+
+      <h3 id="bh-chat">3.7 KI-Chat</h3>
+      <p>Der KI-Chat ist ein projektspezifischer Dialogkanal. Die gesamte Analysestruktur (Risiken, Soll-Zustand, Wellen, Wizard-Daten) wird als Systemkontext an das KI-Modell übermittelt. Vorschlagsfragen erleichtern den Einstieg für neue Nutzerinnen und Nutzer.</p>
+
+      <h4>Voraussetzungen</h4>
+      <ul>
+        <li>Aktiver KI-API-Key (Gemini oder OpenAI) in den Einstellungen konfiguriert</li>
+        <li>Chat-Verlauf wird projektbezogen persistiert (lokal oder Supabase)</li>
+        <li>Chat-Verlauf kann pro Projekt gelöscht werden</li>
+      </ul>
+
+      <h3 id="bh-compare">3.8 Projektvergleich</h3>
+      <p>Über die Sidebar-Navigation <code>/compare</code> können zwei Projekte aus dem eigenen Bestand gegenübergestellt werden. Angezeigt werden: Score, aggregierte Risikozählung (hoch/mittel/niedrig), Technologie-Kennzahlen sowie ein Tech-Stack-Differenzvergleich.</p>
+
+      <p>Voraussetzung: Mindestens zwei Projekte müssen im Dashboard vorhanden sein.</p>
+
+      <h3 id="bh-export">3.9 Export-Funktionen</h3>
+      <p>Analyseergebnisse können in zwei Formaten exportiert werden:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Format</th><th>Inhalt</th><th>Bibliothek</th></tr></thead>
+          <tbody>
+            <tr><td>PDF</td><td>Vollständiger Analysebericht: Deckblatt, Zusammenfassung, Ist-Zustand, Risikokatalog, Soll-Zustand, Umsetzungswellen, Aufgaben-Tracker</td><td>jsPDF + jspdf-autotable</td></tr>
+            <tr><td>DOCX (Word)</td><td>Strukturierter Bericht mit Überschriften, Tabellen und Risikokatalog</td><td>docx</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Beide Exporte werden client-seitig generiert und direkt als Download bereitgestellt – ohne Server-Roundtrip.</p>
+
+      <h3 id="bh-settings">3.10 Einstellungen</h3>
+      <p>Die Einstellungsseite (<code>/settings</code>) ist in zwei Bereiche aufgeteilt:</p>
+
+      <h4>KI-API-Verbindungen</h4>
+      <p>Verwaltung der KI-Provider-Konfigurationen. Unterstützte Provider: <span class="badge badge-purple">Google Gemini</span> <span class="badge badge-green">OpenAI (GPT)</span>. Pro Konfiguration: Anzeigename, Provider-Auswahl, API-Key. Mehrere Konfigurationen möglich; eine wird als aktiv markiert und für Analysen verwendet.</p>
+
+      <h4>Jira-Verbindungen</h4>
+      <p>Anlegen, Bearbeiten und Löschen von Jira-Instanzverbindungen. Verbindungstest prüft Erreichbarkeit und Token-Gültigkeit direkt aus der Oberfläche.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         4. TECHNISCHE ARCHITEKTUR
+    ════════════════════════════════════════════════════════ -->
+    <section id="technische-architektur">
+      <h2><span class="ch-num">4</span> Technische Architektur</h2>
+
+      <h3 id="ta-uebersicht">4.1 Systemübersicht</h3>
+
+      <div class="arch-diagram">
+        <div class="arch-layer">
+          <div class="arch-layer-title">Client</div>
+          <div class="arch-layer-item">Next.js 16 (App Router)</div>
+          <div class="arch-layer-item">React 18</div>
+          <div class="arch-layer-item">Tailwind CSS</div>
+          <div class="arch-layer-item">Zustand Store</div>
+          <div class="arch-layer-item">localStorage</div>
+        </div>
+        <div class="arch-layer" style="border-color:rgba(255,26,26,0.25);">
+          <div class="arch-layer-title" style="color:var(--red);">API Layer</div>
+          <div class="arch-layer-item">Next.js API Routes</div>
+          <div class="arch-layer-item">/api/analyze</div>
+          <div class="arch-layer-item">/api/chat</div>
+          <div class="arch-layer-item">/api/jira/issue</div>
+          <div class="arch-layer-item">/api/jira/test</div>
+        </div>
+        <div class="arch-layer">
+          <div class="arch-layer-title">Backend / Cloud</div>
+          <div class="arch-layer-item">Supabase Auth</div>
+          <div class="arch-layer-item">Supabase DB (Postgres)</div>
+          <div class="arch-layer-item">Row Level Security</div>
+          <div class="arch-layer-item">Google Gemini API</div>
+          <div class="arch-layer-item">Jira REST API</div>
+        </div>
+      </div>
+
+      <h3 id="ta-frontend">4.2 Frontend-Architektur</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Komponente</th><th>Technologie</th><th>Funktion</th></tr></thead>
+          <tbody>
+            <tr><td>Framework</td><td>Next.js 16 (App Router)</td><td>Routing, SSR/CSR, API-Routen, Middleware</td></tr>
+            <tr><td>UI-Bibliothek</td><td>React 18</td><td>Komponentenbasiertes UI</td></tr>
+            <tr><td>Typsystem</td><td>TypeScript 5</td><td>Statische Typisierung, <code>types/index.ts</code> als zentrales Schema</td></tr>
+            <tr><td>Styling</td><td>Tailwind CSS 3</td><td>Utility-First-CSS, Dark-Theme, responsives Layout</td></tr>
+            <tr><td>State Management</td><td>Zustand 4 + <code>persist</code></td><td>Globaler App-Store, automatische localStorage-Persistenz</td></tr>
+            <tr><td>Icons</td><td>lucide-react</td><td>Konsistentes Icon-Set</td></tr>
+            <tr><td>Datum</td><td>date-fns 3</td><td>Formatierungsutilities</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Routing-Struktur</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Route</th><th>Beschreibung</th></tr></thead>
+          <tbody>
+            <tr><td><code>/</code></td><td>Dashboard – Projektübersicht und KPI-Karten</td></tr>
+            <tr><td><code>/wizard</code></td><td>4-Schritte-Wizard zur Projekterfassung</td></tr>
+            <tr><td><code>/project/[id]</code></td><td>Projektdetailseite mit allen 8 Analyse-Tabs</td></tr>
+            <tr><td><code>/compare</code></td><td>Side-by-Side-Projektvergleich</td></tr>
+            <tr><td><code>/settings</code></td><td>KI- und Jira-Konfiguration</td></tr>
+            <tr><td><code>/auth/login</code></td><td>Authentifizierungsseite</td></tr>
+            <tr><td><code>/auth/callback</code></td><td>OAuth / Magic-Link Callback-Handler</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="ta-backend">4.3 Backend / API-Schicht</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>API-Route</th><th>Methode</th><th>Funktion</th></tr></thead>
+          <tbody>
+            <tr><td><code>/api/analyze</code></td><td>POST</td><td>Startet KI-Analyse; verarbeitet Wizard-Daten, ruft Gemini in 5 Phasen auf, gibt <code>AnalysisResult</code> zurück. Fallback bei fehlendem API-Key.</td></tr>
+            <tr><td><code>/api/chat</code></td><td>POST</td><td>KI-Chatanfrage mit vollständigem Projektkontext. Sendet Analysestruktur + Chat-History an Gemini und gibt Antworttext zurück.</td></tr>
+            <tr><td><code>/api/jira/issue</code></td><td>POST</td><td>Erstellt Jira-Vorgang anhand der übergebenen Jira-Konfiguration und Aufgabendaten. Gibt Vorgangsschlüssel und URL zurück.</td></tr>
+            <tr><td><code>/api/jira/test</code></td><td>POST</td><td>Testet Jira-Verbindungskonfiguration (Erreichbarkeit, Token-Gültigkeit).</td></tr>
+            <tr><td><code>/auth/callback</code> (GET)</td><td>GET</td><td>Tauscht Auth-Code gegen Session (Magic Link / OAuth).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="ta-ki">4.4 KI-Integration</h3>
+      <p>Wird im Detail in Kapitel 5 beschrieben.</p>
+
+      <h3 id="ta-persistenz">4.5 Datenpersistenz</h3>
+      <p>ArchPlanner betreibt ein <strong>Dual-Persistenz-Modell</strong>: Die Zustand-Bibliothek mit <code>persist</code>-Middleware schreibt den Store-Zustand automatisch in <code>localStorage</code>. Parallel werden alle schreibenden Store-Aktionen an die Supabase-Datenbankschicht weitergeleitet, sofern Supabase konfiguriert ist.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Betriebsmodus</th><th>Persistenz</th><th>Authentifizierung</th></tr></thead>
+          <tbody>
+            <tr><td>Lokal (ohne Supabase)</td><td>localStorage via Zustand persist</td><td>Nicht erforderlich</td></tr>
+            <tr><td>Cloud (mit Supabase)</td><td>Supabase PostgreSQL + localStorage (Fallback)</td><td>Pflicht; Middleware erzwingt Redirect zu <code>/auth/login</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="ta-auth">4.6 Authentifizierung</h3>
+      <p>Die Authentifizierung basiert vollständig auf Supabase Auth. Die Next.js-Middleware (<code>src/middleware.ts</code>) prüft bei jedem Request die Session via <code>supabase.auth.getUser()</code> und leitet unauthentifizierte Anfragen an <code>/auth/login</code> um. API-Routen und statische Assets sind von der Umleitung ausgenommen.</p>
+
+      <div class="info-box blue">
+        <div class="info-box-title">Lokaler Betrieb ohne Supabase</div>
+        <p>Ist keine Supabase-Konfiguration vorhanden (<code>NEXT_PUBLIC_SUPABASE_URL</code> / <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> nicht gesetzt), deaktiviert die Middleware die gesamte Auth-Prüfung. Die App ist dann ohne Anmeldung nutzbar; Daten werden nur lokal gespeichert.</p>
+      </div>
+
+      <h3 id="ta-schema">4.7 Datenbankschema</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tabelle</th><th>Primärschlüssel</th><th>Inhalt</th></tr></thead>
+          <tbody>
+            <tr><td><code>projects</code></td><td>UUID</td><td>Wizard-Daten (JSONB), Analyse-Ergebnis (JSONB), KI-Status, Zeitstempel</td></tr>
+            <tr><td><code>tasks</code></td><td>UUID</td><td>Aufgaben pro Projekt; Welle, Item, Status, Notiz, Jira-Referenz</td></tr>
+            <tr><td><code>chat_messages</code></td><td>UUID</td><td>Chat-Verlauf pro Projekt; Rolle (user/assistant), Inhalt</td></tr>
+            <tr><td><code>analysis_snapshots</code></td><td>UUID</td><td>Score-Snapshots; Zeitpunkt, Score, Risikozählung, Quelle</td></tr>
+            <tr><td><code>jira_configs</code></td><td>UUID</td><td>Jira-Verbindungskonfigurationen; URL, E-Mail, API-Token, Projektschlüssel</td></tr>
+            <tr><td><code>ai_configs</code></td><td>UUID</td><td>KI-Provider-Konfigurationen; Provider (gemini/openai), Label, API-Key, Aktiv-Flag</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Alle Tabellen sind über eine <code>user_id</code>-Spalte mit <code>auth.users(id)</code> verknüpft (Foreign Key mit <code>ON DELETE CASCADE</code>). Automatischer <code>updated_at</code>-Trigger auf <code>projects</code> und <code>tasks</code>.</p>
+
+      <h3 id="ta-rls">4.8 Row Level Security (RLS)</h3>
+      <p>Jede Tabelle hat Row Level Security aktiviert. Die RLS-Policy lautet einheitlich: <em>Eigene Einträge</em> – jede Nutzerin und jeder Nutzer sieht und schreibt ausschließlich eigene Datensätze (<code>auth.uid() = user_id</code>). Cross-User-Datenzugriff ist auf Datenbankebene unterbunden.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         5. KI-ANALYSE-ENGINE
+    ════════════════════════════════════════════════════════ -->
+    <section id="ki-analyse-engine">
+      <h2><span class="ch-num">5</span> KI-Analyse-Engine</h2>
+
+      <h3 id="ki-gemini">5.1 Google Gemini 2.0 Flash</h3>
+      <p>Die KI-Analyse nutzt <code>gemini-2.0-flash</code> als Modell. Der Analyseprozess ist in fünf sequenzielle Phasen aufgeteilt, die jeweils einen definierten JSON-Kontrakt zurückgeben:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Phase</th><th>Inhalt</th><th>Output-Schema</th></tr></thead>
+          <tbody>
+            <tr><td>Phase 1 / 5</td><td>Zusammenfassung + die 2 kritischsten Kern-Risiken</td><td><code>{ summary, risks[] }</code></td></tr>
+            <tr><td>Phase 2 / 5</td><td>Erweiterte Risikoliste (bis 4 weitere Risiken)</td><td><code>{ risks[] }</code></td></tr>
+            <tr><td>Phase 3 / 5</td><td>Soll-Zustand (Zielarchitektur-Empfehlungen)</td><td><code>{ soll[] }</code></td></tr>
+            <tr><td>Phase 4 / 5</td><td>5-Wellen-Umsetzungsplan</td><td><code>{ waves[] }</code></td></tr>
+            <tr><td>Phase 5 / 5</td><td>Score (0–100) und Score-Label</td><td><code>{ score, scoreLabel }</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>API-Key-Auflösung</h4>
+      <p>Der API-Key wird mit folgender Priorität aufgelöst: (1) Vom Client übermittelter Key aus der aktiven KI-Konfiguration, (2) Umgebungsvariable <code>GOOGLE_AI_API_KEY</code>. Fehlt beides, wird die Fallback-Analyse ausgeführt.</p>
+
+      <h4>Rate-Limit-Behandlung</h4>
+      <p>Bei HTTP 429 (Quota Exceeded) oder <code>RESOURCE_EXHAUSTED</code>-Fehlern parst die API-Route die Retry-After-Sekunde aus der Fehlermeldung und wartet entsprechend (+ 2 Sekunden Puffer). Maximal 5 Versuche pro Phase.</p>
+
+      <h3 id="ki-fallback">5.2 Regelbasierter Fallback</h3>
+      <p>Die Fallback-Analyse (<code>src/lib/fallback-analysis.ts</code>) ist eine deterministische, vollständig lokale Engine ohne externe Abhängigkeiten. Sie leitet aus den Wizard-Daten skalierungssensitive Risikobewertungen und Empfehlungen ab.</p>
+
+      <h4>Skalierungs-Logik</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Skalierungsstufe</th><th>Kriterien</th></tr></thead>
+          <tbody>
+            <tr><td><code>small</code></td><td>Team ≤ 5, Ziel-Apps &lt; 20</td></tr>
+            <tr><td><code>medium</code></td><td>Team 5–15 oder Ziel-Apps 20–49</td></tr>
+            <tr><td><code>large</code></td><td>Team 15–30 oder Ziel-Apps 50–99</td></tr>
+            <tr><td><code>enterprise</code></td><td>Team &gt; 30 oder Ziel-Apps ≥ 100</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Auf Basis der Skalierungsstufe werden Risikoschweregrad, Risikobeschreibung und Handlungsempfehlung kontextuell angepasst. Erfasste Risikobereiche: Legacy-Systeme, Code-Sharing-Strategie, Testing-Abdeckung, Monitoring, CI/CD, Design-System, Branching, Dokumentation, Onboarding-Dauer.</p>
+
+      <h3 id="ki-scoring">5.3 Scoring-Modell</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Score-Bereich</th><th>Label</th><th>Farbcodierung</th></tr></thead>
+          <tbody>
+            <tr><td>71 – 100</td><td>Gut / Sehr gut</td><td style="color:var(--green)">Grün</td></tr>
+            <tr><td>51 – 70</td><td>Ausbaufähig</td><td style="color:var(--amber)">Amber</td></tr>
+            <tr><td>0 – 50</td><td>Kritisch</td><td style="color:#ff6b6b">Rot</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Der Score wird von der KI (Phase 5) auf Basis der gesamten Analyse generiert. Bei regelbasierter Analyse wird ein aus den Risikogewichtungen berechneter Score verwendet. Bei Neuanalyse wird der bisherige Score als Snapshot gespeichert.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         6. JIRA-INTEGRATION
+    ════════════════════════════════════════════════════════ -->
+    <section id="jira-integration">
+      <h2><span class="ch-num">6</span> Jira-Integration</h2>
+
+      <p>Die Jira-Integration ist eine optionale Erweiterung des Aufgaben-Trackers. Sie ermöglicht das direkte Anlegen von Jira-Vorgängen aus ArchPlanner heraus, ohne den Bearbeitungskontext zu verlassen.</p>
+
+      <h3>Technischer Ablauf</h3>
+      <ol class="step-list">
+        <li>Nutzer konfiguriert Jira-Verbindung in Einstellungen (URL, E-Mail, API-Token, Projektschlüssel, Vorgangstyp)</li>
+        <li>Verbindungstest via <code>POST /api/jira/test</code> – prüft Authentifizierung und Projektexistenz</li>
+        <li>Hover über Aufgabe im Tracker → Link-Icon sichtbar → Klick startet Vorgang-Erstellung</li>
+        <li>Bei mehreren Jira-Konfigurationen: Instanz-Auswahl per Dropdown</li>
+        <li><code>POST /api/jira/issue</code> erzeugt den Vorgang in Jira via REST API</li>
+        <li>Erstellter Vorgang: Schlüssel (z.B. <code>PROJ-42</code>) und direkter URL werden in der Aufgabe persistiert</li>
+      </ol>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Jira-Feld</th><th>Befüllung</th></tr></thead>
+          <tbody>
+            <tr><td>Summary</td><td>Item-Text der Aufgabe</td></tr>
+            <tr><td>Description</td><td>Wellenkontext (Weiteres Vorhaben)</td></tr>
+            <tr><td>Issue Type</td><td>Konfiguriert (Task / Story / Bug / Epic / Sub-task)</td></tr>
+            <tr><td>Project</td><td>Konfigurierter Projektschlüssel</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         7. EXPORT
+    ════════════════════════════════════════════════════════ -->
+    <section id="export">
+      <h2><span class="ch-num">7</span> Export-Funktionen</h2>
+
+      <h3>PDF-Export</h3>
+      <p>Bibliothek: <code>jsPDF</code> + <code>jspdf-autotable</code>. Generierung vollständig client-seitig. Das erzeugte PDF enthält:</p>
+      <ul>
+        <li>Deckblatt mit Projektname, Kundename und Analysedatum</li>
+        <li>Score-Anzeige mit Label</li>
+        <li>Zusammenfassung (KI-generiert oder regelbasiert)</li>
+        <li>Ist-Zustand als Übersichtstabelle</li>
+        <li>Vollständiger Risikokatalog nach Schweregrad</li>
+        <li>Soll-Zustand (falls vorhanden)</li>
+        <li>5-Wellen-Umsetzungsplan</li>
+        <li>Aufgaben-Liste mit Status</li>
+      </ul>
+
+      <h3>Word-Export (DOCX)</h3>
+      <p>Bibliothek: <code>docx</code> (v9). Generierung vollständig client-seitig. Erzeugt ein strukturiertes DOCX mit Überschriften, formatierten Tabellen und farbiger Risikokennzeichnung. Geeignet zur Weiterbearbeitung in Microsoft Word oder kompatiblen Programmen.</p>
+
+      <div class="info-box green">
+        <div class="info-box-title">Client-seitige Generierung</div>
+        <p>Beide Export-Formate werden ohne Server-Roundtrip erzeugt. Analysedaten verlassen den Browser nicht erneut. Der Download startet direkt nach der Generierung.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         8. DEPLOYMENT & CI/CD
+    ════════════════════════════════════════════════════════ -->
+    <section id="deployment">
+      <h2><span class="ch-num">8</span> Deployment &amp; CI/CD</h2>
+
+      <h3 id="dep-cicd">8.1 GitHub Actions</h3>
+      <p>Der CI/CD-Workflow (<code>.github/workflows/ci.yml</code>) wird bei jedem Push und Pull Request auf <code>main</code> ausgeführt.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Job</th><th>Schritte</th><th>Auslöser</th></tr></thead>
+          <tbody>
+            <tr><td>lint-and-test</td><td>TypeScript-Typen (tsc --noEmit), ESLint, Vitest mit Coverage, Coverage-Summary in Job Summary, Coverage-Artefakt als Download (30 Tage), PR-Kommentierung mit Coverage-Report</td><td>Push + PR auf main</td></tr>
+            <tr><td>deploy-coverage</td><td>Deployment des Coverage-HTML-Reports + Produkthandbuch auf GitHub Pages</td><td>Nur Push auf main</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="dep-pages">8.2 GitHub Pages</h3>
+      <p>GitHub Pages hostet zwei Inhalte unter der Projekt-URL:</p>
+      <ul>
+        <li><strong>Produkthandbuch</strong> (<code>docs/index.html</code>) – dieses Dokument, erreichbar an der Root-URL</li>
+        <li><strong>Coverage-Report</strong> (<code>coverage/index.html</code>) – interaktiver Vitest-Coverage-HTML-Report unter <code>/coverage/</code></li>
+      </ul>
+      <p>Der Workflow kombiniert beide Artefakte in einem Pages-Upload. Die Sidebar dieses Handbuchs verlinkt direkt auf den Coverage-Report.</p>
+
+      <h3 id="dep-docker">8.3 Lokale Entwicklung (Docker)</h3>
+      <p>Für lokale Entwicklung ohne Supabase-Cloud-Account steht eine Docker-Compose-Konfiguration bereit:</p>
+      <pre><code>npm run db:start   # PostgreSQL + pgAdmin starten
+npm run db:stop    # Datenbank stoppen
+npm run db:reset   # Datenbank zurücksetzen (Daten löschen + Schema neu einspielen)
+npm run db:logs    # Datenbankprotokoll streamen</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dienst</th><th>Port</th><th>Zugangsdaten</th></tr></thead>
+          <tbody>
+            <tr><td>PostgreSQL</td><td>5432</td><td>User: archplanner / Passwort: archplanner / DB: archplanner</td></tr>
+            <tr><td>pgAdmin</td><td>5050</td><td>admin@archplanner.local / admin</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Das Datenbankschema wird beim ersten Start automatisch aus <code>supabase/migrations/</code> eingespielt. Migrations-Dateien können auch direkt im Supabase SQL-Editor ausgeführt werden.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         9. SICHERHEIT
+    ════════════════════════════════════════════════════════ -->
+    <section id="sicherheit">
+      <h2><span class="ch-num">9</span> Sicherheit</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bereich</th><th>Maßnahme</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Authentifizierung</td><td>Supabase Auth; alle Routen durch Middleware gesichert; Session-Refresh bei jedem Request</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Datenbankzugriff</td><td>Row Level Security auf allen Tabellen; kein Cross-User-Zugriff möglich</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>API-Key-Handling (KI)</td><td>Keys werden in Supabase gespeichert (RLS geschützt) und client-seitig vom Store geladen; nicht im HTML exponiert</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Jira API-Token</td><td>Server-seitige Verarbeitung via Next.js API-Route; Token wird nicht an Client zurückgesendet</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Input-Validierung</td><td>Wizard-Eingaben sind typisiert (TypeScript); API-Routen prüfen eingehende JSON-Strukturen</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>HTTPS</td><td>Vercel erzwingt HTTPS; lokale Entwicklung via HTTP (dev-only)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Dependency-Scanning</td><td>Keine automatische Renovate/Dependabot-Konfiguration vorhanden</td><td><span class="badge badge-amber">Offen</span></td></tr>
+            <tr><td>Rate-Limiting (eigene API)</td><td>Kein dediziertes Rate-Limiting auf <code>/api/*</code> (Vercel-Ebene)</td><td><span class="badge badge-amber">Offen</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         10. K6-SYNTHESE
+    ════════════════════════════════════════════════════════ -->
+    <section id="k6-synthese">
+      <h2><span class="ch-num">10</span> K6-Synthese: Produktreife-Framework</h2>
+
+      <p>Die folgende Bewertung strukturiert und synthetisiert den Produktreifestand von ArchPlanner auf K6-Niveau (Bloom: Synthetisieren und Bewerten). Sie dient als übergeordneter Governancerahmen für Produkt-, Architektur- und Betriebsentscheidungen.</p>
+
+      <h3>Reifegradmatrix</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dimension</th><th>Bewertung</th><th>Begründung</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Funktionsumfang</td>
+              <td><span class="badge badge-green">Hoch (4/5)</span></td>
+              <td>Alle Kernfunktionen implementiert; Wizard, KI, Export, Jira, Chat, Trend, Vergleich vollständig nutzbar</td>
+            </tr>
+            <tr>
+              <td>Technische Solidität</td>
+              <td><span class="badge badge-green">Hoch (4/5)</span></td>
+              <td>TypeScript durchgehend, RLS, Dual-Persistenz, CI/CD, getrennter Fallback; keine kritischen Architekturdefizite erkannt</td>
+            </tr>
+            <tr>
+              <td>KI-Resilienz</td>
+              <td><span class="badge badge-green">Hoch (4/5)</span></td>
+              <td>Fünfphasige Analyse, Rate-Limit-Retry, vollständiger lokaler Fallback; keine Abhängigkeit von API-Verfügbarkeit für Basisfunktion</td>
+            </tr>
+            <tr>
+              <td>Testabdeckung</td>
+              <td><span class="badge badge-amber">Mittel (3/5)</span></td>
+              <td>Unit-Tests für kritische Logik vorhanden; E2E-Tests und Integration gegen echte Supabase ausstehend</td>
+            </tr>
+            <tr>
+              <td>Beobachtbarkeit</td>
+              <td><span class="badge badge-amber">Mittel (2/5)</span></td>
+              <td>Kein zentrales Logging, kein Error-Tracking (Sentry), kein Uptime-Monitoring in Produktion konfiguriert</td>
+            </tr>
+            <tr>
+              <td>Sicherheitshygiene</td>
+              <td><span class="badge badge-amber">Mittel (3/5)</span></td>
+              <td>RLS und Auth stark; Dependency-Scanning und Rate-Limiting fehlen noch</td>
+            </tr>
+            <tr>
+              <td>Dokumentationsqualität</td>
+              <td><span class="badge badge-green">Hoch (4/5)</span></td>
+              <td>README vollständig; Datenbankschema kommentiert; dieses Handbuch; Coverage-Report automatisiert</td>
+            </tr>
+            <tr>
+              <td>Deployment-Reife</td>
+              <td><span class="badge badge-green">Hoch (4/5)</span></td>
+              <td>CI/CD produktiv; Pages automatisch; Docker lokal; Supabase-Migrations standardisiert</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Synthese-Bewertung</h3>
+      <p>ArchPlanner ist ein technisch solides, produktionsreifes Werkzeug für seinen definierten Einsatzzweck. Die Kernarchitektur (Next.js + Supabase + Zustand) ist für das Anwendungsprofil gut gewählt: einfach deploybar, skalierbar auf Einzelnutzer- bis kleines-Team-Niveau, mit vertretbaren Betriebskosten.</p>
+
+      <p>Das Dual-Persistenz-Modell (lokal + Cloud optional) ist ein signifikanter Differenzierungsfaktor für die Zielgruppe: Nutzerinnen und Nutzer können sofort beginnen, ohne Cloud-Account, und später die Supabase-Persistenz zuschalten. Die KI-Engine ist durch den vollständigen lokalen Fallback gegen API-Ausfälle abgesichert – ein bewusstes, qualitätssicherndes Entwurfsprinzip.</p>
+
+      <p>Die offenen Punkte (Observability, Dependency-Scanning) sind keine Mängel der Kernfunktion, sondern typische Lücken der zweiten Ausbaustufe nach dem Produktlaunch. Sie sind priorisierbar ohne Architekturumbruch.</p>
+
+      <div class="score-meter">
+        <div>Gesamtreifegrad</div>
+        <div class="score-bar"><div class="score-fill" style="width:76%;background:var(--green);"></div></div>
+        <div class="score-num" style="color:var(--green)">76/100</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         11. TIEFENANALYSE & AUDIT
+    ════════════════════════════════════════════════════════ -->
+    <section id="tiefenanalyse">
+      <h2><span class="ch-num">11</span> Tiefenanalyse &amp; Audit-Bericht</h2>
+
+      <h3>Systemkonsistenz-Prüfung</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Prüfbereich</th><th>Befund</th><th>Bewertung</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>TypeScript-Vollständigkeit</td>
+              <td>Alle Entitäten in <code>types/index.ts</code> zentral typisiert; API-Routen und Store nutzen diese Typen konsistent</td>
+              <td class="audit-cell-ok">✓ Konsistent</td>
+            </tr>
+            <tr>
+              <td>Store ↔ DB-Synchronisation</td>
+              <td>Jede schreibende Store-Aktion ruft die entsprechende <code>db*</code>-Funktion auf; keine Inkonsistenz identifiziert</td>
+              <td class="audit-cell-ok">✓ Konsistent</td>
+            </tr>
+            <tr>
+              <td>RLS-Abdeckung</td>
+              <td>Alle 6 Tabellen haben RLS aktiviert und eine Policy definiert</td>
+              <td class="audit-cell-ok">✓ Vollständig</td>
+            </tr>
+            <tr>
+              <td>Fallback-Vollständigkeit</td>
+              <td>Fallback-Analyse deckt alle Wizard-Felder ab und gibt ein vollständiges <code>AnalysisResult</code> zurück</td>
+              <td class="audit-cell-ok">✓ Vollständig</td>
+            </tr>
+            <tr>
+              <td>Export-Vollständigkeit</td>
+              <td>PDF und DOCX exportieren alle Analysesektionen; beide Generierungen sind client-seitig und unabhängig</td>
+              <td class="audit-cell-ok">✓ Vollständig</td>
+            </tr>
+            <tr>
+              <td>CI-Pipeline</td>
+              <td>Lint, TypeScript, Tests, Coverage-Report, Pages-Deploy – alle Schritte aktiv und nachweisbar</td>
+              <td class="audit-cell-ok">✓ Aktiv</td>
+            </tr>
+            <tr>
+              <td>Auth-Bypass (lokal)</td>
+              <td>Middleware deaktiviert sich korrekt wenn keine Supabase-Envvars gesetzt; kein unbeabsichtigter Zugriffsfehler im lokalen Betrieb</td>
+              <td class="audit-cell-ok">✓ Korrekt</td>
+            </tr>
+            <tr>
+              <td>API-Key-Sicherheit</td>
+              <td>KI-Keys werden über Supabase RLS-geschützt gespeichert; Übertragung nur im HTTPS-gesicherten Request. Jira-Token werden nicht zum Client zurückgesendet.</td>
+              <td class="audit-cell-ok">✓ Sicher</td>
+            </tr>
+            <tr>
+              <td>Observability</td>
+              <td>Kein Sentry, kein centrales Log-Management, kein Uptime-Check in Produktion</td>
+              <td class="audit-cell-warn">⚠ Lücke</td>
+            </tr>
+            <tr>
+              <td>Dependency-Management</td>
+              <td>Kein Renovate / Dependabot konfiguriert; Abhängigkeiten werden manuell aktualisiert</td>
+              <td class="audit-cell-warn">⚠ Lücke</td>
+            </tr>
+            <tr>
+              <td>Rate-Limiting (eigene API)</td>
+              <td>Kein anwendungsseitiges Rate-Limiting auf <code>/api/analyze</code> oder <code>/api/chat</code></td>
+              <td class="audit-cell-warn">⚠ Lücke</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Offene Punkte (priorisiert)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Priorität</th><th>Punkt</th><th>Empfehlung</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-amber">Mittel</span></td>
+              <td>Observability fehlt</td>
+              <td>Sentry für Error-Tracking einbinden; Uptime-Monitor einrichten (z.B. Betterstack, UptimeRobot)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-amber">Mittel</span></td>
+              <td>Dependency-Scanning</td>
+              <td>Dependabot oder Renovate aktivieren; <code>.github/dependabot.yml</code> anlegen</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-amber">Mittel</span></td>
+              <td>API Rate-Limiting</td>
+              <td>Vercel Edge Middleware oder Upstash-Rate-Limiting für <code>/api/analyze</code> und <code>/api/chat</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-gray">Niedrig</span></td>
+              <td>E2E-Tests fehlen</td>
+              <td>Playwright-Tests für kritischen Workflow (Wizard → Analyse → Export) einrichten</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-gray">Niedrig</span></td>
+              <td>Mehrsprachigkeit</td>
+              <td>Aktuell nur Deutsch; bei Bedarf i18n-Bibliothek (next-intl) nachzurüsten</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         12. MANAGEMENT-FAZIT
+    ════════════════════════════════════════════════════════ -->
+    <section id="management-fazit">
+      <h2><span class="ch-num">12</span> Management-Fazit</h2>
+
+      <p>ArchPlanner ist ein funktionell vollständiges, technisch solides Produkt für seinen definierten Einsatzzweck. Der Gesamtreifegrad beträgt <strong>76/100</strong>.</p>
+
+      <div class="info-box green">
+        <div class="info-box-title">Stärken</div>
+        <p>Alle Kernfunktionen produktiv nutzbar · KI-Engine mit vollständigem lokalem Fallback · Dual-Persistenz (lokal + Cloud) · RLS-gesichertes Datenmodell · Export in zwei Formaten · Jira-Integration · CI/CD mit automatischer Pages-Publikation</p>
+      </div>
+
+      <div class="info-box amber">
+        <div class="info-box-title">Handlungsempfehlungen (nächste Ausbaustufe)</div>
+        <p>Observability (Sentry + Uptime-Monitor) · Dependency-Scanning (Dependabot) · API Rate-Limiting · E2E-Tests (Playwright) · Optional: i18n für Mehrsprachigkeit</p>
+      </div>
+
+      <p>Die Architekturentscheidungen (Next.js App Router, Supabase, Zustand) sind für das Anwendungsprofil angemessen und erlauben eine unkomplizierte Weiterentwicklung. Das Produkt ist launchbereit und in der vorliegenden Form ohne Architekturumbruch erweiterbar.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Entscheidungspunkt</th><th>Empfehlung</th></tr></thead>
+          <tbody>
+            <tr><td>Produktionsfreigabe</td><td><strong>Empfohlen.</strong> Alle kritischen Pfade funktionsfähig, getestet und CI-geprüft.</td></tr>
+            <tr><td>Nächste Entwicklungsiteration</td><td>Observability-Maßnahmen (Sentry); Dependabot aktivieren.</td></tr>
+            <tr><td>Skalierbarkeit</td><td>Supabase hat ausreichend Kapazität für das Zweck-Nutzerprofil; keine Redesign-Notwendigkeit bis in den 4-stelligen Nutzerbereich.</td></tr>
+            <tr><td>KI-Provider-Abhängigkeit</td><td>Google Gemini als primärer Provider akzeptabel; OpenAI-Unterstützung bereits konfigurierbar. Kein Single-Point-of-Failure durch vollständigen Fallback.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ── PAGE FOOTER ──────────────────────────────────────────── -->
+<footer class="page-footer">
+  © 2026 ArchPlanner – WAMOCON &nbsp;·&nbsp; Alle Rechte vorbehalten &nbsp;·&nbsp;
+  Produkthandbuch Version 1.0 &nbsp;·&nbsp; Dokument erstellt: März 2026
+</footer>
+
+</body>
+</html>
