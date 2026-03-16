@@ -46,8 +46,8 @@ export function ScoreTrend({ snapshots, currentScore }: { snapshots: AnalysisSna
           {diff > 0 ? `▲ +${diff}` : diff < 0 ? `▼ ${diff}` : '–'} seit Start
         </span>
       </div>
-      <div className="p-4 overflow-x-auto">
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="max-w-full">
+      <div className="p-4">
+        <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{ display: 'block', height: 'auto' }}>
           <defs>
             <linearGradient id="st-area" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#22aa66" stopOpacity="0.25" />

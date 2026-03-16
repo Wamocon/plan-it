@@ -2,9 +2,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
-import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X } from 'lucide-react';
 
-export function Sidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const projects = useAppStore(s => s.projects);
 
@@ -24,10 +24,7 @@ export function Sidebar() {
     s + p.analysis.risks.filter(r => r.severity === 'high').length, 0);
 
   return (
-    <aside
-      className="hidden md:flex flex-col w-52 shrink-0 border-r border-white/[0.06] overflow-y-auto"
-      style={{ background: 'rgba(8,3,3,0.85)' }}
-    >
+    <>
       {/* Navigation */}
       <nav className="p-3 flex flex-col gap-0.5">
         <div className="text-[9px] font-bold text-white/20 uppercase tracking-widest px-2 pt-3 pb-1.5">
@@ -39,7 +36,8 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${
+              onClick={onNavigate}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${`
                 active
                   ? 'bg-[#ff1a1a]/12 text-white border border-[#ff1a1a]/20'
                   : 'text-white/45 hover:text-white/80 hover:bg-white/[0.05]'
@@ -104,7 +102,8 @@ export function Sidebar() {
                 <Link
                   key={p.id}
                   href={`/project/${p.id}`}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg no-underline transition-all group ${
+                  onClick={onNavigate}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg no-underline transition-all group ${`
                     active ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]'
                   }`}
                 >
@@ -129,6 +128,7 @@ export function Sidebar() {
       <div className="mt-auto p-3 border-t border-white/[0.04]">
         <Link
           href="/settings"
+          onClick={onNavigate}
           className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${
             pathname === '/settings'
               ? 'bg-[#ff1a1a]/12 text-white border border-[#ff1a1a]/20'
@@ -140,6 +140,46 @@ export function Sidebar() {
           <span>Einstellungen</span>
         </Link>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden md:flex flex-col w-52 shrink-0 border-r border-white/[0.06] overflow-y-auto"
+        style={{ background: 'rgba(8,3,3,0.85)' }}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 z-40 md:hidden"
+            onClick={onClose}
+          />
+          <aside
+            className="fixed inset-y-0 left-0 z-50 flex flex-col w-72 md:hidden overflow-y-auto"
+            style={{ background: 'rgba(10,3,3,0.98)' }}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
+              <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Navigation</span>
+              <button
+                onClick={onClose}
+                className="text-white/40 hover:text-white bg-transparent border-none cursor-pointer p-1 rounded transition-colors"
+                aria-label="Menü schließen"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <SidebarContent onNavigate={onClose} />
+          </aside>
+        </>
+      )}
+    </>
   );
 }

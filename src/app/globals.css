@@ -7,6 +7,9 @@ html {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+@media (max-width: 640px) {
+  html { font-size: 15px; }
+}
 html::-webkit-scrollbar {
   display: none;
 }
