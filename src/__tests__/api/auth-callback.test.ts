@@ -7,21 +7,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 // ── Auth Callback ─────────────────────────────────────────────
-
-const mockExchangeCodeForSession = vi.fn().mockResolvedValue({ data: {}, error: null });
-
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(async () => ({
-    auth: { exchangeCodeForSession: mockExchangeCodeForSession },
-  })),
-}));
-
-vi.mock('next/headers', () => ({
-  cookies: vi.fn(() => ({
-    getAll: () => [],
-    set: vi.fn(),
-  })),
-}));
+// Appwrite verwaltet Sessions über Cookies nativ – kein Code-Exchange nötig.
 
 vi.mock('next/server', () => ({
   NextResponse: {
@@ -35,26 +21,27 @@ vi.mock('next/server', () => ({
 import { GET } from '@/app/auth/callback/route';
 
 describe('GET /auth/callback', () => {
-  it('tauscht Code gegen Session aus wenn ?code= vorhanden', async () => {
+  it('leitet auf Origin + / um wenn ?code= vorhanden', async () => {
     const req = new Request('http://localhost/auth/callback?code=test-code-123');
-    await GET(req as never);
-    expect(mockExchangeCodeForSession).toHaveBeenCalledWith('test-code-123');
-  });
-
-  it('ruft exchangeCodeForSession NICHT auf wenn kein code-Parameter', async () => {
-    mockExchangeCodeForSession.mockClear();
-    const req = new Request('http://localhost/auth/callback');
-    await GET(req as never);
-    expect(mockExchangeCodeForSession).not.toHaveBeenCalled();
-  });
-
-  it('leitet nach / um', async () => {
-    const req = new Request('http://localhost/auth/callback?code=abc');
     const res = await GET(req as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
     expect(((res as unknown as Record<string, unknown>).href as string)).toContain('/');
   });
+
+  it('leitet auf Origin + / um auch ohne code-Parameter', async () => {
+    const req = new Request('http://localhost/auth/callback');
+    const res = await GET(req as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+    expect(((res as unknown as Record<string, unknown>).href as string)).toContain('/');
+  });
+
+  it('leitet genau auf http://localhost/ um', async () => {
+    const req = new Request('http://localhost/auth/callback?code=abc');
+    const res = await GET(req as never);
+    expect((res as unknown as Record<string, unknown>).href).toBe('http://localhost/');
+  });
 });
+
 
 // ── Produktions-Schema: RLS-Validierung ──────────────────────
 
