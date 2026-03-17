@@ -42,7 +42,7 @@ Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchite
 - **Score-Trend** — Automatischer Snapshot bei jeder Re-Analyse
 - **KI-Chat** — Kontextbezogene Antworten auf Basis der vollständigen Analyse
 - **PDF & DOCX Export** — Analysebericht exportieren
-- **Persistenz** — Lokale Speicherung via Zustand + localStorage **oder** vollständige Supabase-Persistenz (optional)
+- **Persistenz** — Lokale Speicherung via Zustand + localStorage **oder** vollständige Appwrite-Persistenz (Cloud/Self-Hosted)
 
 ---
 
@@ -62,22 +62,23 @@ npm run dev
 
 Öffne [http://localhost:3000](http://localhost:3000).
 
-**Ohne API Key** funktioniert die App mit regelbasierter Analyse.  
-**Mit API Key** analysiert Google Gemini die Daten individuell und gibt spezifischere Empfehlungen.
+**Ohne KI-API-Key** funktioniert die App mit regelbasierter Analyse.  
+**Mit KI-API-Key** analysiert Google Gemini die Daten individuell und gibt spezifischere Empfehlungen.  
+**Authentifizierung:** Die App erfordert eine laufende Appwrite-Instanz. Ohne gültige Session wird auf `/auth/login` umgeleitet.
 
 ---
 
-## Lokale Datenbank (Docker)
+## Lokale Schema-Inspektion (Docker)
 
-Für lokale Entwicklung mit PostgreSQL (kein Supabase-Account nötig):
+Die mitgelieferte `docker-compose.yml` startet PostgreSQL + pgAdmin zur Inspektion des SQL-Schemas. Dies spiegelt die Collection-Struktur der Appwrite-Datenbank:
 
 ```bash
 # PostgreSQL + pgAdmin starten
 npm run db:start
 
 # pgAdmin öffnen: http://localhost:5050
-# Login: admin@archplanner.local / admin
-# PostgreSQL: localhost:5432 / archplanner / archplanner / archplanner
+# Login: admin@local.dev / admin
+# PostgreSQL: localhost:5432 / archplanner / postgres / postgres
 
 # DB stoppen
 npm run db:stop
@@ -89,25 +90,33 @@ npm run db:reset
 npm run db:logs
 ```
 
-Das Schema und Testdaten werden beim ersten Start automatisch aus `supabase/migrations/` eingespielt.
+Das SQL-Schema wird beim ersten Start automatisch aus `supabase/migrations/` eingespielt (Referenz-Schema; die Laufzeit-Persistenz erfolgt über Appwrite).
 
 ---
 
-## Supabase-Integration (Cloud)
+## Appwrite-Integration (Auth + Cloud-Datenbank)
 
 Für persistente Cloud-Speicherung mit Authentifizierung:
 
-1. Supabase-Projekt anlegen auf [supabase.com](https://supabase.com)
-2. SQL-Migration ausführen: Inhalt von `supabase/migrations/20240101000000_initial_schema.sql` im Supabase SQL-Editor ausführen
-3. Umgebungsvariablen setzen:
+1. Appwrite-Instanz anlegen – [Appwrite Cloud](https://cloud.appwrite.io) (kostenlos) oder Self-Hosted
+2. Neues Projekt anlegen, Projekt-ID notieren
+3. Datenbank `archplanner` anlegen
+4. Collections anlegen: `projects`, `tasks`, `chat_messages`, `analysis_snapshots`, `jira_configs`, `ai_configs`
+5. API-Key in Appwrite erstellen (alle Datenbank-Scopes)
+6. Umgebungsvariablen setzen:
 
 ```bash
 # .env.local
-NEXT_PUBLIC_SUPABASE_URL=https://dein-projekt.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=dein-anon-key
+NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+NEXT_PUBLIC_APPWRITE_PROJECT_ID=dein-projekt-id
+APPWRITE_API_KEY=dein-api-key
+NEXT_PUBLIC_APPWRITE_DATABASE_ID=archplanner
 ```
 
-4. App starten — Benutzer werden automatisch auf `/auth/login` weitergeleitet
+7. App starten — Benutzer werden automatisch auf `/auth/login` weitergeleitet (E-Mail/Passwort)
+
+> **Lokaler Betrieb:** Ohne laufende Appwrite-Instanz werden alle Anfragen auf `/auth/login` umgeleitet.
+> Für rein lokale Tests kann Appwrite per Docker gestartet werden (siehe [Appwrite-Dokumentation](https://appwrite.io/docs/self-hosting)).
 
 ---
 
@@ -146,12 +155,12 @@ Analysebericht mit 8 Tabs + Chat + Jira-Anbindung
 
 ## Tech Stack
 
-- **Next.js 15** (App Router, latest)
-- **React 19** + TypeScript
+- **Next.js 16** (App Router, latest)
+- **React 18** + TypeScript
 - **Tailwind CSS** — Dark Theme, WMC Corporate Design
 - **Zustand** mit `persist`-Middleware (localStorage)
-- **Supabase** (`@supabase/supabase-js`, `@supabase/ssr`) — Auth + Cloud-DB (optional)
-- **PostgreSQL 16** via Docker — Lokale Entwicklungsdatenbank
+- **Appwrite** (`node-appwrite`) — Auth + Cloud-DB (optional)
+- **PostgreSQL 16** via Docker — Lokale Schema-Inspektion (pgAdmin)
 - **Google Generative AI** — Gemini 2.0 Flash
 - **jsPDF + docx** — PDF & Word Export
 - **lucide-react** — Icons
@@ -193,22 +202,22 @@ src/
 │   │   └── MultiSelect.tsx
 │   └── wizard/WizardForm.tsx
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts                   # Browser-Client (createBrowserClient)
-│   │   ├── server.ts                   # Server-Client (createServerClient)
-│   │   └── db.ts                       # CRUD-Layer (20+ Funktionen)
+│   ├── appwrite/
+│   │   ├── auth.ts                     # Auth-Client (E-Mail/Passwort, Appwrite Account API)
+│   │   ├── client.ts                   # Server- und Browser-Client (node-appwrite)
+│   │   └── db.ts                       # CRUD-Layer (20+ Funktionen, Appwrite Databases)
 │   ├── fallback-analysis.ts            # Regelbasierte Analyse
 │   ├── wizard-steps.ts                 # Wizard-Konfiguration
 │   ├── export-pdf.ts
 │   └── export-word.ts
-├── middleware.ts                        # Auth-Guard (Redirect zu /auth/login)
-├── stores/appStore.ts                  # Zustand Store + Supabase-Persistenz
+├── middleware.ts                        # Auth-Guard (Appwrite-Session-Cookie, Redirect zu /auth/login)
+├── stores/appStore.ts                  # Zustand Store + Appwrite-Persistenz
 └── types/index.ts                      # Alle TypeScript-Typen
 
 supabase/
 └── migrations/
-    ├── 00000000000000_local_dev_schema.sql   # Lokales Schema (Docker)
-    └── 20240101000000_initial_schema.sql     # Produktions-Schema (Supabase)
+    ├── 00000000000000_local_dev_schema.sql   # SQL-Schema für lokale Inspektion via pgAdmin
+    └── 20240101000000_initial_schema.sql     # SQL-Referenzschema (Appwrite Collections spiegeln diese Struktur)
 
 docker-compose.yml                      # PostgreSQL 16 + pgAdmin
 ```
@@ -220,8 +229,10 @@ docker-compose.yml                      # PostgreSQL 16 + pgAdmin
 | Variable | Beschreibung |
 |----------|-------------|
 | `GOOGLE_AI_API_KEY` | Google Gemini API Key ([kostenlos holen](https://aistudio.google.com/app/apikey)) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Projekt-URL (nur für Cloud-Betrieb) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Anon-Key (nur für Cloud-Betrieb) |
+| `NEXT_PUBLIC_APPWRITE_ENDPOINT` | Appwrite API-Endpunkt (Standard: `https://cloud.appwrite.io/v1`) |
+| `NEXT_PUBLIC_APPWRITE_PROJECT_ID` | Appwrite Projekt-ID |
+| `APPWRITE_API_KEY` | Appwrite API-Key (server-seitig, alle DB-Scopes) |
+| `NEXT_PUBLIC_APPWRITE_DATABASE_ID` | Appwrite Datenbank-ID (Standard: `archplanner`) |
 
 ---
 
@@ -238,7 +249,7 @@ npm run test:coverage
 | Bereich | Tests |
 |---------|-------|
 | Zustand Store (appStore) | Unit-Tests aller Actions |
-| Supabase DB-Layer | 66 Tests (CRUD, Auth, Fehlerbehandlung) |
+| Appwrite DB-Layer | 66 Tests (CRUD, Auth, Fehlerbehandlung) |
 | Middleware (Auth-Guard) | 10 Tests |
 | Auth Callback + Schema | 11 Tests |
 | API-Routen (analyze, chat, jira) | Integration-Tests |
