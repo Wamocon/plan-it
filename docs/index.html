@@ -377,7 +377,7 @@
     <a class="toc-link l2" href="#ta-persistenz">4.5 Datenpersistenz</a>
     <a class="toc-link l2" href="#ta-auth">4.6 Authentifizierung</a>
     <a class="toc-link l2" href="#ta-schema">4.7 Datenbankschema</a>
-    <a class="toc-link l2" href="#ta-rls">4.8 Row Level Security</a>
+    <a class="toc-link l2" href="#ta-rls">4.8 Zugriffskontrolle</a>
 
     <a class="toc-link l1" href="#ki-analyse-engine">5&nbsp; KI-Analyse-Engine</a>
     <a class="toc-link l2" href="#ki-gemini">5.1 Google Gemini 2.0</a>
@@ -413,7 +413,7 @@
         <div class="meta-item"><div class="meta-label">Datum</div><div class="meta-value">März 2026</div></div>
         <div class="meta-item"><div class="meta-label">Herausgeber</div><div class="meta-value">WAMOCON</div></div>
         <div class="meta-item"><div class="meta-label">Status</div><div class="meta-value"><span class="badge badge-green">Produktiv</span></div></div>
-        <div class="meta-item"><div class="meta-label">Tech-Basis</div><div class="meta-value">Next.js · Supabase · Gemini</div></div>
+        <div class="meta-item"><div class="meta-label">Tech-Basis</div><div class="meta-value">Next.js · Appwrite · Gemini</div></div>
         <div class="meta-item"><div class="meta-label">Dokumenttyp</div><div class="meta-value">Produkt- &amp; Technische Dokumentation</div></div>
       </div>
     </div>
@@ -435,7 +435,7 @@
 
       <p>Kernleistung der Anwendung ist ein fünfphasiger KI-Analyseprozess auf Basis von Google Gemini 2.0 Flash, der individuelle Risikobewertungen, Soll-Architekturempfehlungen und einen 5-Wellen-Umsetzungsplan generiert. Für den Betrieb ohne KI-API-Schlüssel steht ein vollständig lokal ausführbarer, regelbasierter Fallback bereit.</p>
 
-      <p>Die Datenpersistenz ist in zwei Modi ausgeführt: lokal via Zustand/localStorage (ohne Backend) und cloud-basiert via Supabase (mit optionaler Authentifizierung). Jira-Integration erlaubt das direkte Anlegen von Vorgängen aus dem integrierten Aufgaben-Tracker. Analyseergebnisse sind als PDF und Word exportierbar.</p>
+      <p>Die Datenpersistenz ist in zwei Modi ausgeführt: lokal via Zustand/localStorage (ohne Backend) und cloud-basiert via Appwrite (mit Authentifizierungspflicht). Jira-Integration erlaubt das direkte Anlegen von Vorgängen aus dem integrierten Aufgaben-Tracker. Analyseergebnisse sind als PDF und Word exportierbar.</p>
 
       <div class="info-box green">
         <div class="info-box-title">Produktstatus</div>
@@ -500,8 +500,8 @@
             <tr><td>Projektvergleich</td><td>Side-by-Side-Vergleich zweier Projekte inkl. Tech-Stack-Diff</td><td><span class="badge badge-green">Implementiert</span></td></tr>
             <tr><td>PDF-Export</td><td>Vollständiger Analysebericht als PDF (jsPDF)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
             <tr><td>Word-Export</td><td>Analysebericht als DOCX (docx-Library)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
-            <tr><td>Supabase-Persistenz</td><td>Optionale Cloud-Speicherung mit Authentifizierung</td><td><span class="badge badge-green">Implementiert</span></td></tr>
-            <tr><td>Authentifizierung</td><td>E-Mail/Passwort + Magic Link (Supabase Auth)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Appwrite-Persistenz</td><td>Optionale Cloud-Speicherung mit Authentifizierung (Appwrite Database)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Authentifizierung</td><td>E-Mail/Passwort + Registrierung (Appwrite Auth)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
             <tr><td>Multi-KI-Konfiguration</td><td>Mehrere API-Keys (Gemini / OpenAI) verwaltbar</td><td><span class="badge badge-green">Implementiert</span></td></tr>
           </tbody>
         </table>
@@ -515,21 +515,20 @@
       <h2><span class="ch-num">3</span> Benutzerhandbuch</h2>
 
       <h3 id="bh-auth">3.1 Authentifizierung</h3>
-      <p>Die Authentifizierung in ArchPlanner ist optional, jedoch erforderlich für die Cloud-Persistenz von Projekten, Aufgaben und Konfigurationen. Ohne Supabase-Konfiguration läuft die App im lokalen Modus ohne Authentifizierungspflicht.</p>
+      <p>Die Authentifizierung in ArchPlanner basiert auf Appwrite und ist für die Cloud-Persistenz von Projekten, Aufgaben und Konfigurationen erforderlich. Die Middleware erzwingt eine gültige Appwrite-Session bei jedem Seitenaufruf.</p>
 
       <h4>Anmeldeoptionen</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Methode</th><th>Funktionsweise</th><th>Voraussetzung</th></tr></thead>
           <tbody>
-            <tr><td>E-Mail + Passwort</td><td>Direktanmeldung mit gespeichertem Passwort</td><td>Registriertes Konto</td></tr>
-            <tr><td>Magic Link</td><td>Einmaliger Bestätigungslink per E-Mail; kein Passwort erforderlich</td><td>Gültige E-Mail-Adresse</td></tr>
-            <tr><td>Registrierung</td><td>Neues Konto anlegen; E-Mail-Bestätigung über Link</td><td>Gültige E-Mail-Adresse</td></tr>
+            <tr><td>E-Mail + Passwort</td><td>Direktanmeldung mit gespeichertem Passwort via Appwrite <code>createEmailPasswordSession</code></td><td>Registriertes Konto</td></tr>
+            <tr><td>Registrierung</td><td>Neues Konto im Anmelde-Dialog anlegen; kein separates Portal nötig</td><td>Gültige E-Mail-Adresse + Passwort</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p>Nach erfolgreicher Authentifizierung werden alle eigenen Projekte, Aufgaben, Snapshots, Chat-Verläufe und Konfigurationen aus der Supabase-Datenbank geladen. Die Middleware leitet nicht authentifizierte Nutzerinnen und Nutzer automatisch auf <code>/auth/login</code> um.</p>
+      <p>Nach erfolgreicher Authentifizierung werden alle eigenen Projekte, Aufgaben, Snapshots, Chat-Verläufe und Konfigurationen aus der Appwrite-Datenbank geladen. Die Middleware leitet nicht authentifizierte Nutzerinnen und Nutzer automatisch auf <code>/auth/login</code> um.</p>
 
       <h3 id="bh-dashboard">3.2 Dashboard</h3>
       <p>Das Dashboard ist der zentrale Einstiegspunkt. Es zeigt eine Übersicht aller angelegten Projekte sowie aggregierte Kennzahlen.</p>
@@ -659,7 +658,7 @@
 
       <div class="info-box amber">
         <div class="info-box-title">Sicherheitshinweis</div>
-        <p>Jira API-Token werden in der Supabase-Datenbank gespeichert. Die Verbindung erfolgt server-seitig über eine Next.js API-Route. API-Token werden nicht im Client-Speicher (localStorage) exponiert, sofern Supabase-Persistenz aktiviert ist.</p>
+        <p>Jira API-Token werden in der Appwrite-Datenbank gespeichert. Die Verbindung erfolgt server-seitig über eine Next.js API-Route. API-Token werden nicht im Client-Speicher (localStorage) exponiert.</p>
       </div>
 
       <h3 id="bh-chat">3.7 KI-Chat</h3>
@@ -668,7 +667,7 @@
       <h4>Voraussetzungen</h4>
       <ul>
         <li>Aktiver KI-API-Key (Gemini oder OpenAI) in den Einstellungen konfiguriert</li>
-        <li>Chat-Verlauf wird projektbezogen persistiert (lokal oder Supabase)</li>
+        <li>Chat-Verlauf wird projektbezogen persistiert (lokal oder Appwrite)</li>
         <li>Chat-Verlauf kann pro Projekt gelöscht werden</li>
       </ul>
 
@@ -729,9 +728,9 @@
         </div>
         <div class="arch-layer">
           <div class="arch-layer-title">Backend / Cloud</div>
-          <div class="arch-layer-item">Supabase Auth</div>
-          <div class="arch-layer-item">Supabase DB (Postgres)</div>
-          <div class="arch-layer-item">Row Level Security</div>
+          <div class="arch-layer-item">Appwrite Auth</div>
+          <div class="arch-layer-item">Appwrite Database</div>
+          <div class="arch-layer-item">Appwrite Permissions</div>
           <div class="arch-layer-item">Google Gemini API</div>
           <div class="arch-layer-item">Jira REST API</div>
         </div>
@@ -787,45 +786,45 @@
       <p>Wird im Detail in Kapitel 5 beschrieben.</p>
 
       <h3 id="ta-persistenz">4.5 Datenpersistenz</h3>
-      <p>ArchPlanner betreibt ein <strong>Dual-Persistenz-Modell</strong>: Die Zustand-Bibliothek mit <code>persist</code>-Middleware schreibt den Store-Zustand automatisch in <code>localStorage</code>. Parallel werden alle schreibenden Store-Aktionen an die Supabase-Datenbankschicht weitergeleitet, sofern Supabase konfiguriert ist.</p>
+      <p>ArchPlanner betreibt ein <strong>Dual-Persistenz-Modell</strong>: Die Zustand-Bibliothek mit <code>persist</code>-Middleware schreibt den Store-Zustand automatisch in <code>localStorage</code>. Parallel werden alle schreibenden Store-Aktionen an die Appwrite-Datenbankschicht weitergeleitet, sofern Appwrite konfiguriert ist.</p>
 
       <div class="table-wrap">
         <table>
           <thead><tr><th>Betriebsmodus</th><th>Persistenz</th><th>Authentifizierung</th></tr></thead>
           <tbody>
-            <tr><td>Lokal (ohne Supabase)</td><td>localStorage via Zustand persist</td><td>Nicht erforderlich</td></tr>
-            <tr><td>Cloud (mit Supabase)</td><td>Supabase PostgreSQL + localStorage (Fallback)</td><td>Pflicht; Middleware erzwingt Redirect zu <code>/auth/login</code></td></tr>
+            <tr><td>Lokal (ohne Appwrite)</td><td>localStorage via Zustand persist</td><td>Nicht erforderlich; Middleware leitet zu <code>/auth/login</code> um, sofern keine Appwrite-Session gesetzt</td></tr>
+            <tr><td>Cloud (mit Appwrite)</td><td>Appwrite Database + localStorage (Fallback)</td><td>Pflicht; Middleware erzwingt Redirect zu <code>/auth/login</code></td></tr>
           </tbody>
         </table>
       </div>
 
       <h3 id="ta-auth">4.6 Authentifizierung</h3>
-      <p>Die Authentifizierung basiert vollständig auf Supabase Auth. Die Next.js-Middleware (<code>src/middleware.ts</code>) prüft bei jedem Request die Session via <code>supabase.auth.getUser()</code> und leitet unauthentifizierte Anfragen an <code>/auth/login</code> um. API-Routen und statische Assets sind von der Umleitung ausgenommen.</p>
+      <p>Die Authentifizierung basiert auf <strong>Appwrite</strong> (E-Mail / Passwort). Die Next.js-Middleware (<code>src/middleware.ts</code>) prüft bei jedem Request die Session via Appwrite-Session-Cookie (<code>a_session_{projectId}</code>) und leitet unauthentifizierte Anfragen an <code>/auth/login</code> um. API-Routen und statische Assets sind von der Umleitung ausgenommen.</p>
 
       <div class="info-box blue">
-        <div class="info-box-title">Lokaler Betrieb ohne Supabase</div>
-        <p>Ist keine Supabase-Konfiguration vorhanden (<code>NEXT_PUBLIC_SUPABASE_URL</code> / <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> nicht gesetzt), deaktiviert die Middleware die gesamte Auth-Prüfung. Die App ist dann ohne Anmeldung nutzbar; Daten werden nur lokal gespeichert.</p>
+        <div class="info-box-title">Lokaler Betrieb mit Appwrite</div>
+        <p>Für lokalen Betrieb ist eine laufende Appwrite-Instanz erforderlich (Cloud oder Self-Hosted via Docker). Ohne gültige Appwrite-Session leitet die Middleware automatisch zu <code>/auth/login</code> um. Der Datenbankschicht (<code>lib/appwrite/db.ts</code>) ist ein Fallback-Nutzer <code>local-dev-user</code> hinterlegt, der greift, wenn keine Auth-Session verfügbar ist – jedoch erst nach Login.</p>
       </div>
 
-      <h3 id="ta-schema">4.7 Datenbankschema</h3>
+      <h3 id="ta-schema">4.7 Datenbankschema (Appwrite Collections)</h3>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Tabelle</th><th>Primärschlüssel</th><th>Inhalt</th></tr></thead>
+          <thead><tr><th>Collection</th><th>Dokument-ID</th><th>Inhalt</th></tr></thead>
           <tbody>
-            <tr><td><code>projects</code></td><td>UUID</td><td>Wizard-Daten (JSONB), Analyse-Ergebnis (JSONB), KI-Status, Zeitstempel</td></tr>
-            <tr><td><code>tasks</code></td><td>UUID</td><td>Aufgaben pro Projekt; Welle, Item, Status, Notiz, Jira-Referenz</td></tr>
-            <tr><td><code>chat_messages</code></td><td>UUID</td><td>Chat-Verlauf pro Projekt; Rolle (user/assistant), Inhalt</td></tr>
-            <tr><td><code>analysis_snapshots</code></td><td>UUID</td><td>Score-Snapshots; Zeitpunkt, Score, Risikozählung, Quelle</td></tr>
-            <tr><td><code>jira_configs</code></td><td>UUID</td><td>Jira-Verbindungskonfigurationen; URL, E-Mail, API-Token, Projektschlüssel</td></tr>
-            <tr><td><code>ai_configs</code></td><td>UUID</td><td>KI-Provider-Konfigurationen; Provider (gemini/openai), Label, API-Key, Aktiv-Flag</td></tr>
+            <tr><td><code>projects</code></td><td>$id (String)</td><td>wizard_data (JSON-String), analysis (JSON-String), ai_pending (Bool), ai_fail_reason (String), user_id</td></tr>
+            <tr><td><code>tasks</code></td><td>$id (String)</td><td>Aufgaben pro Projekt; wave_number, wave_title, item, status, note, jira_issue_key, jira_issue_url, jira_config_id, project_id, user_id</td></tr>
+            <tr><td><code>chat_messages</code></td><td>$id (String)</td><td>Chat-Verlauf pro Projekt; role (user/assistant), content, project_id, user_id</td></tr>
+            <tr><td><code>analysis_snapshots</code></td><td>$id (String)</td><td>Score-Snapshots; taken_at, score, score_label, risk_count, high_count, source, project_id, user_id</td></tr>
+            <tr><td><code>jira_configs</code></td><td>$id (String)</td><td>Jira-Verbindungskonfigurationen; base_url, email, api_token, project_key, issue_type, label, user_id</td></tr>
+            <tr><td><code>ai_configs</code></td><td>$id (String)</td><td>KI-Provider-Konfigurationen; provider (gemini/openai), label, api_key, is_active, user_id</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p>Alle Tabellen sind über eine <code>user_id</code>-Spalte mit <code>auth.users(id)</code> verknüpft (Foreign Key mit <code>ON DELETE CASCADE</code>). Automatischer <code>updated_at</code>-Trigger auf <code>projects</code> und <code>tasks</code>.</p>
+      <p>Alle Collections speichern eine <code>user_id</code>-Spalte zur anwendungsseitigen Datentrennung. Appwrite-Dokument-IDs werden durch das SDK automatisch als <code>$id</code> und <code>$createdAt</code>/<code>$updatedAt</code> bereitgestellt.</p>
 
-      <h3 id="ta-rls">4.8 Row Level Security (RLS)</h3>
-      <p>Jede Tabelle hat Row Level Security aktiviert. Die RLS-Policy lautet einheitlich: <em>Eigene Einträge</em> – jede Nutzerin und jeder Nutzer sieht und schreibt ausschließlich eigene Datensätze (<code>auth.uid() = user_id</code>). Cross-User-Datenzugriff ist auf Datenbankebene unterbunden.</p>
+      <h3 id="ta-rls">4.8 Zugriffskontrolle</h3>
+      <p>ArchPlanner verwendet anwendungsseitige Zugriffskontrolle: Alle Datenbankabfragen werden in <code>lib/appwrite/db.ts</code> mit <code>Query.equal('user_id', userId)</code> gefiltert. Jede Nutzerin und jeder Nutzer sieht und schreibt ausschließlich eigene Datensätze. Cross-User-Datenzugriff ist durch konsistente <code>user_id</code>-Filterung auf Abfrageebene verhindert.</p>
     </section>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -976,7 +975,7 @@
       <p>Der Workflow kombiniert beide Artefakte in einem Pages-Upload. Die Sidebar dieses Handbuchs verlinkt direkt auf den Coverage-Report.</p>
 
       <h3 id="dep-docker">8.3 Lokale Entwicklung (Docker)</h3>
-      <p>Für lokale Entwicklung ohne Supabase-Cloud-Account steht eine Docker-Compose-Konfiguration bereit:</p>
+      <p>Für lokale Schema-Inspektion und Entwicklung steht eine Docker-Compose-Konfiguration bereit (PostgreSQL + pgAdmin). Die Laufzeit-Persistenz erfolgt über Appwrite.</p>
       <pre><code>npm run db:start   # PostgreSQL + pgAdmin starten
 npm run db:stop    # Datenbank stoppen
 npm run db:reset   # Datenbank zurücksetzen (Daten löschen + Schema neu einspielen)
@@ -992,7 +991,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
         </table>
       </div>
 
-      <p>Das Datenbankschema wird beim ersten Start automatisch aus <code>supabase/migrations/</code> eingespielt. Migrations-Dateien können auch direkt im Supabase SQL-Editor ausgeführt werden.</p>
+      <p>Das SQL-Referenzschema wird beim ersten Start automatisch aus <code>supabase/migrations/</code> eingespielt und spiegelt die Appwrite-Collection-Struktur wider.</p>
     </section>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -1005,9 +1004,9 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
         <table>
           <thead><tr><th>Bereich</th><th>Maßnahme</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Authentifizierung</td><td>Supabase Auth; alle Routen durch Middleware gesichert; Session-Refresh bei jedem Request</td><td><span class="badge badge-green">Implementiert</span></td></tr>
-            <tr><td>Datenbankzugriff</td><td>Row Level Security auf allen Tabellen; kein Cross-User-Zugriff möglich</td><td><span class="badge badge-green">Implementiert</span></td></tr>
-            <tr><td>API-Key-Handling (KI)</td><td>Keys werden in Supabase gespeichert (RLS geschützt) und client-seitig vom Store geladen; nicht im HTML exponiert</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Authentifizierung</td><td>Appwrite Auth (E-Mail/Passwort); alle Routen durch Middleware gesichert; Session-Prüfung via Cookie bei jedem Request</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>Datenbankzugriff</td><td>Anwendungsseitige user_id-Filterung auf allen Collections; kein Cross-User-Zugriff möglich</td><td><span class="badge badge-green">Implementiert</span></td></tr>
+            <tr><td>API-Key-Handling (KI)</td><td>Keys werden in Appwrite gespeichert (user_id-gefiltert) und client-seitig vom Store geladen; nicht im HTML exponiert</td><td><span class="badge badge-green">Implementiert</span></td></tr>
             <tr><td>Jira API-Token</td><td>Server-seitige Verarbeitung via Next.js API-Route; Token wird nicht an Client zurückgesendet</td><td><span class="badge badge-green">Implementiert</span></td></tr>
             <tr><td>Input-Validierung</td><td>Wizard-Eingaben sind typisiert (TypeScript); API-Routen prüfen eingehende JSON-Strukturen</td><td><span class="badge badge-green">Implementiert</span></td></tr>
             <tr><td>HTTPS</td><td>Vercel erzwingt HTTPS; lokale Entwicklung via HTTP (dev-only)</td><td><span class="badge badge-green">Implementiert</span></td></tr>
@@ -1049,7 +1048,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
             <tr>
               <td>Testabdeckung</td>
               <td><span class="badge badge-amber">Mittel (3/5)</span></td>
-              <td>Unit-Tests für kritische Logik vorhanden; E2E-Tests und Integration gegen echte Supabase ausstehend</td>
+              <td>Unit-Tests für kritische Logik vorhanden; E2E-Tests und Integration gegen echte Appwrite-Instanz ausstehend</td>
             </tr>
             <tr>
               <td>Beobachtbarkeit</td>
@@ -1069,16 +1068,16 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
             <tr>
               <td>Deployment-Reife</td>
               <td><span class="badge badge-green">Hoch (4/5)</span></td>
-              <td>CI/CD produktiv; Pages automatisch; Docker lokal; Supabase-Migrations standardisiert</td>
+              <td>CI/CD produktiv; Pages automatisch; Docker lokal; SQL-Referenzschema in supabase/migrations versioniert</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <h3>Synthese-Bewertung</h3>
-      <p>ArchPlanner ist ein technisch solides, produktionsreifes Werkzeug für seinen definierten Einsatzzweck. Die Kernarchitektur (Next.js + Supabase + Zustand) ist für das Anwendungsprofil gut gewählt: einfach deploybar, skalierbar auf Einzelnutzer- bis kleines-Team-Niveau, mit vertretbaren Betriebskosten.</p>
+      <p>ArchPlanner ist ein technisch solides, produktionsreifes Werkzeug für seinen definierten Einsatzzweck. Die Kernarchitektur (Next.js + Appwrite + Zustand) ist für das Anwendungsprofil gut gewählt: einfach deploybar, skalierbar auf Einzelnutzer- bis kleines-Team-Niveau, mit vertretbaren Betriebskosten.</p>
 
-      <p>Das Dual-Persistenz-Modell (lokal + Cloud optional) ist ein signifikanter Differenzierungsfaktor für die Zielgruppe: Nutzerinnen und Nutzer können sofort beginnen, ohne Cloud-Account, und später die Supabase-Persistenz zuschalten. Die KI-Engine ist durch den vollständigen lokalen Fallback gegen API-Ausfälle abgesichert – ein bewusstes, qualitätssicherndes Entwurfsprinzip.</p>
+      <p>Das Dual-Persistenz-Modell (localStorage + Cloud via Appwrite) sichert Datenverfügbarkeit auch bei Netzwerkunterbrechungen. Die KI-Engine ist durch den vollständigen lokalen Fallback gegen API-Ausfälle abgesichert – ein bewusstes, qualitätssicherndes Entwurfsprinzip.</p>
 
       <p>Die offenen Punkte (Observability, Dependency-Scanning) sind keine Mängel der Kernfunktion, sondern typische Lücken der zweiten Ausbaustufe nach dem Produktlaunch. Sie sind priorisierbar ohne Architekturumbruch.</p>
 
@@ -1131,13 +1130,13 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
               <td class="audit-cell-ok">✓ Aktiv</td>
             </tr>
             <tr>
-              <td>Auth-Bypass (lokal)</td>
-              <td>Middleware deaktiviert sich korrekt wenn keine Supabase-Envvars gesetzt; kein unbeabsichtigter Zugriffsfehler im lokalen Betrieb</td>
+              <td>Auth-Verhalten (Middleware)</td>
+              <td>Middleware prüft Appwrite-Session-Cookie; leitet korrekt zu /auth/login um wenn keine gültige Session vorliegt</td>
               <td class="audit-cell-ok">✓ Korrekt</td>
             </tr>
             <tr>
               <td>API-Key-Sicherheit</td>
-              <td>KI-Keys werden über Supabase RLS-geschützt gespeichert; Übertragung nur im HTTPS-gesicherten Request. Jira-Token werden nicht zum Client zurückgesendet.</td>
+              <td>KI-Keys werden in Appwrite user_id-gefiltert gespeichert; Übertragung nur im HTTPS-gesicherten Request. Jira-Token werden nicht zum Client zurückgesendet.</td>
               <td class="audit-cell-ok">✓ Sicher</td>
             </tr>
             <tr>
@@ -1212,7 +1211,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
         <p>Observability (Sentry + Uptime-Monitor) · Dependency-Scanning (Dependabot) · API Rate-Limiting · E2E-Tests (Playwright) · Optional: i18n für Mehrsprachigkeit</p>
       </div>
 
-      <p>Die Architekturentscheidungen (Next.js App Router, Supabase, Zustand) sind für das Anwendungsprofil angemessen und erlauben eine unkomplizierte Weiterentwicklung. Das Produkt ist launchbereit und in der vorliegenden Form ohne Architekturumbruch erweiterbar.</p>
+      <p>Die Architekturentscheidungen (Next.js App Router, Appwrite, Zustand) sind für das Anwendungsprofil angemessen und erlauben eine unkomplizierte Weiterentwicklung. Das Produkt ist launchbereit und in der vorliegenden Form ohne Architekturumbruch erweiterbar.</p>
 
       <div class="table-wrap">
         <table>
@@ -1220,7 +1219,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
           <tbody>
             <tr><td>Produktionsfreigabe</td><td><strong>Empfohlen.</strong> Alle kritischen Pfade funktionsfähig, getestet und CI-geprüft.</td></tr>
             <tr><td>Nächste Entwicklungsiteration</td><td>Observability-Maßnahmen (Sentry); Dependabot aktivieren.</td></tr>
-            <tr><td>Skalierbarkeit</td><td>Supabase hat ausreichend Kapazität für das Zweck-Nutzerprofil; keine Redesign-Notwendigkeit bis in den 4-stelligen Nutzerbereich.</td></tr>
+            <tr><td>Skalierbarkeit</td><td>Appwrite (Cloud oder Self-Hosted) hat ausreichend Kapazität für das Zweck-Nutzerprofil; keine Redesign-Notwendigkeit bis in den 4-stelligen Nutzerbereich.</td></tr>
             <tr><td>KI-Provider-Abhängigkeit</td><td>Google Gemini als primärer Provider akzeptabel; OpenAI-Unterstützung bereits konfigurierbar. Kein Single-Point-of-Failure durch vollständigen Fallback.</td></tr>
           </tbody>
         </table>
