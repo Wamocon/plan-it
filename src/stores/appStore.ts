@@ -8,7 +8,7 @@ import {
   dbTakeSnapshot,
   dbAddJiraConfig, dbUpdateJiraConfig, dbDeleteJiraConfig,
   dbAddAiConfig, dbUpdateAiConfig, dbDeleteAiConfig, dbSetActiveAiConfig,
-} from '@/lib/supabase/db';
+} from '@/lib/appwrite/db';
 
 interface AppStore {
   projects: Project[];

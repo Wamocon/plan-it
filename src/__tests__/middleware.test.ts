@@ -2,23 +2,26 @@
  * Tests für src/middleware.ts
  *
  * Entscheidungsüberdeckung:
- * - Nicht eingeloggt + geschützte Route  → Redirect zu /auth/login
- * - Nicht eingeloggt + /auth/*           → Kein Redirect (pass-through)
- * - Nicht eingeloggt + /api/*            → Kein Redirect (pass-through)
- * - Eingeloggt + beliebige Route         → Pass-through
+ * - Kein Session-Cookie + geschützte Route   → Redirect zu /auth/login
+ * - Ungültige Session + geschützte Route     → Redirect zu /auth/login
+ * - Gültige Session + beliebige Route        → Pass-through
+ * - Beliebige Route unter /auth/*            → Pass-through (immer)
+ * - Beliebige Route unter /api/*             → Pass-through (immer)
  */
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 
 // ── Mocks ────────────────────────────────────────────────────
 
-const mockGetUser = vi.fn();
-const mockSetAll = vi.fn();
-const mockRedirect = vi.fn();
-const mockNext = vi.fn();
+const mockAccountGet = vi.fn();
 
-vi.mock('@supabase/ssr', () => ({
-  createServerClient: vi.fn(() => ({
-    auth: { getUser: mockGetUser },
+vi.mock('node-appwrite', () => ({
+  Client: vi.fn(() => ({
+    setEndpoint: vi.fn().mockReturnThis(),
+    setProject:  vi.fn().mockReturnThis(),
+    setSession:  vi.fn().mockReturnThis(),
+  })),
+  Account: vi.fn(() => ({
+    get: mockAccountGet,
   })),
 }));
 
@@ -38,7 +41,7 @@ vi.mock('next/server', () => ({
 
 // ── Hilfsklasse: MinimalRequest ──────────────────────────────
 
-function makeRequest(pathname: string) {
+function makeRequest(pathname: string, sessionCookie?: string) {
   return {
     nextUrl: {
       pathname,
@@ -47,8 +50,12 @@ function makeRequest(pathname: string) {
       },
     },
     cookies: {
-      getAll: vi.fn(() => []),
-      set: vi.fn(),
+      get: vi.fn((name: string) => {
+        if (sessionCookie && name.startsWith('a_session_')) {
+          return { value: sessionCookie };
+        }
+        return undefined;
+      }),
     },
     url: `http://localhost${pathname}`,
   };
@@ -58,22 +65,20 @@ import { middleware } from '@/middleware';
 
 describe('middleware – Authentifizierungs-Guard', () => {
   beforeAll(() => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT   = 'http://localhost:9080/v1';
+    process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID = 'testproject';
   });
 
   afterAll(() => {
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    delete process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
+    delete process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockNext.mockReturnValue({ _type: 'next', cookies: { set: vi.fn() } });
   });
 
   it('leitet nicht eingeloggten User auf /auth/login um', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
     const req = makeRequest('/');
     const res = await middleware(req as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
@@ -81,56 +86,58 @@ describe('middleware – Authentifizierungs-Guard', () => {
   });
 
   it('leitet auf /auth/login um auch bei geschützten Unterseiten', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/project/123') as never);
     expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
 
+  it('leitet auf /auth/login um wenn Session ungültig ist', async () => {
+    mockAccountGet.mockRejectedValueOnce(new Error('Unauthorized'));
+    const res = await middleware(makeRequest('/', 'invalid-session') as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+  });
+
   it('lässt /auth/login durch ohne Redirect wenn nicht eingeloggt', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/auth/login') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /auth/callback durch ohne Redirect wenn nicht eingeloggt', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/auth/callback') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /api/analyze durch ohne Redirect wenn nicht eingeloggt', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/api/analyze') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /api/chat durch ohne Redirect wenn nicht eingeloggt', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await middleware(makeRequest('/api/chat') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf / durch', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    const res = await middleware(makeRequest('/') as never);
+    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
+    const res = await middleware(makeRequest('/', 'valid-session') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf /settings durch', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    const res = await middleware(makeRequest('/settings') as never);
+    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
+    const res = await middleware(makeRequest('/settings', 'valid-session') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf /wizard durch', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
-    const res = await middleware(makeRequest('/wizard') as never);
+    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
+    const res = await middleware(makeRequest('/wizard', 'valid-session') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
-  it('ruft auth.getUser() immer auf (Session-Refresh)', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
-    await middleware(makeRequest('/auth/login') as never);
-    expect(mockGetUser).toHaveBeenCalledTimes(1);
+  it('ruft Account.get() auf wenn Session-Cookie vorhanden ist', async () => {
+    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
+    await middleware(makeRequest('/', 'valid-session') as never);
+    expect(mockAccountGet).toHaveBeenCalledTimes(1);
   });
 });
+

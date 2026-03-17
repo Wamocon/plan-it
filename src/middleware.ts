@@ -1,45 +1,38 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { Client, Account } from 'node-appwrite';
+
+const ENDPOINT   = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT   ?? 'http://localhost:9080/v1';
+const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ?? 'myproject';
 
 export async function middleware(request: NextRequest) {
-  // Ohne Supabase-Konfiguration (lokaler Docker-Betrieb) → direkt durchlassen
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  const { pathname } = request.nextUrl;
+
+  // Auth- und API-Routen immer ohne Session-Prüfung durchlassen
+  if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
     return NextResponse.next({ request });
   }
 
-  let supabaseResponse = NextResponse.next({ request });
+  // Appwrite-Session aus Cookie lesen (Browser-SDK setzt a_session_{projectId})
+  const sessionCookie =
+    request.cookies.get(`a_session_${PROJECT_ID}`)?.value ??
+    request.cookies.get(`a_session_${PROJECT_ID}_legacy`)?.value;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
+  if (sessionCookie) {
+    const client = new Client()
+      .setEndpoint(ENDPOINT)
+      .setProject(PROJECT_ID)
+      .setSession(sessionCookie);
+    try {
+      await new Account(client).get();
+      return NextResponse.next({ request });
+    } catch {
+      // Ungültige oder abgelaufene Session → Redirect
     }
-  );
-
-  // Session auffrischen – wichtig: kein Code zwischen createServerClient und getUser()
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Nicht eingeloggte User zur Login-Seite umleiten (außer Login/Auth-Routen)
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/auth');
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
-
-  if (!user && !isAuthRoute && !isApiRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/auth/login';
-    return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = '/auth/login';
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

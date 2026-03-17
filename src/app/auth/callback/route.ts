@@ -1,16 +1,8 @@
-import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Wird aufgerufen wenn Supabase nach dem Magic Link / OAuth zurückleitet
+// Auth callback – Appwrite handles sessions via cookies natively
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-
-  if (code) {
-    const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
+  const { origin } = new URL(request.url);
   return NextResponse.redirect(`${origin}/`);
 }
