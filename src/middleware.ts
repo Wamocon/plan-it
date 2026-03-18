@@ -1,33 +1,26 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { Client, Account } from 'node-appwrite';
 
-const ENDPOINT   = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT   ?? 'http://localhost:9080/v1';
-const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ?? 'myproject';
+// node-appwrite ist NICHT Edge-Runtime-kompatibel und darf hier nicht importiert werden.
+// Die vollständige Session-Validierung erfolgt in Server-Komponenten (lib/appwrite/server.ts).
+// Die Middleware prüft nur die Cookie-Existenz als Lightweight-Guard.
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ?? 'myproject';
 
   // Auth- und API-Routen immer ohne Session-Prüfung durchlassen
   if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
     return NextResponse.next({ request });
   }
 
-  // Appwrite-Session aus Cookie lesen (Browser-SDK setzt a_session_{projectId})
+  // Appwrite-Session oder lokaler Modus
   const sessionCookie =
     request.cookies.get(`a_session_${PROJECT_ID}`)?.value ??
     request.cookies.get(`a_session_${PROJECT_ID}_legacy`)?.value;
+  const localCookie = request.cookies.get('plan-it-local')?.value;
 
-  if (sessionCookie) {
-    const client = new Client()
-      .setEndpoint(ENDPOINT)
-      .setProject(PROJECT_ID)
-      .setSession(sessionCookie);
-    try {
-      await new Account(client).get();
-      return NextResponse.next({ request });
-    } catch {
-      // Ungültige oder abgelaufene Session → Redirect
-    }
+  if (sessionCookie || localCookie) {
+    return NextResponse.next({ request });
   }
 
   const loginUrl = request.nextUrl.clone();

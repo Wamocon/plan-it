@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAccount, ID } from '@/lib/appwrite/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,13 +16,13 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const account = getAccount();
-      if (mode === 'login') {
-        await account.createEmailPasswordSession(email, password);
-      } else {
-        await account.create(ID.unique(), email, password);
-        await account.createEmailPasswordSession(email, password);
-      }
+      const res  = await fetch('/api/auth/session', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ mode, email, password }),
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok) throw new Error(data.error ?? 'Fehler bei der Anmeldung');
       router.push('/');
       router.refresh();
     } catch (err: unknown) {
@@ -79,10 +78,14 @@ export default function LoginPage() {
         <div className="mt-4 text-center">
           <p className="text-gray-600 text-xs">F\u00fcr lokale Nutzung einfach weiter ohne Login</p>
           <button
-            onClick={() => router.push('/')}
+            onClick={async () => {
+              await fetch('/api/auth/local', { method: 'POST' });
+              router.push('/');
+              router.refresh();
+            }}
             className="mt-2 w-full border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white rounded-lg py-2 text-sm transition-colors"
           >
-            Ohne Anmeldung fortfahren \u2192
+            Ohne Anmeldung fortfahren →
           </button>
         </div>
       </div>
