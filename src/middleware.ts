@@ -4,10 +4,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 // Die vollständige Session-Validierung erfolgt in Server-Komponenten (lib/appwrite/server.ts).
 // Die Middleware prüft nur die Cookie-Existenz als Lightweight-Guard.
 
-const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ?? 'myproject';
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ?? 'myproject';
 
   // Auth- und API-Routen immer ohne Session-Prüfung durchlassen
   if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {

@@ -3,27 +3,12 @@
  *
  * Entscheidungsüberdeckung:
  * - Kein Session-Cookie + geschützte Route   → Redirect zu /auth/login
- * - Ungültige Session + geschützte Route     → Redirect zu /auth/login
- * - Gültige Session + beliebige Route        → Pass-through
+ * - Session-Cookie vorhanden                 → Pass-through (kein API-Call)
+ * - plan-it-local Cookie vorhanden           → Pass-through (lokaler Modus)
  * - Beliebige Route unter /auth/*            → Pass-through (immer)
  * - Beliebige Route unter /api/*             → Pass-through (immer)
  */
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
-
-// ── Mocks ────────────────────────────────────────────────────
-
-const mockAccountGet = vi.fn();
-
-vi.mock('node-appwrite', () => ({
-  Client: vi.fn(() => ({
-    setEndpoint: vi.fn().mockReturnThis(),
-    setProject:  vi.fn().mockReturnThis(),
-    setSession:  vi.fn().mockReturnThis(),
-  })),
-  Account: vi.fn(() => ({
-    get: mockAccountGet,
-  })),
-}));
 
 vi.mock('next/server', () => ({
   NextResponse: {
@@ -41,7 +26,7 @@ vi.mock('next/server', () => ({
 
 // ── Hilfsklasse: MinimalRequest ──────────────────────────────
 
-function makeRequest(pathname: string, sessionCookie?: string) {
+function makeRequest(pathname: string, cookies: Record<string, string> = {}) {
   return {
     nextUrl: {
       pathname,
@@ -51,9 +36,7 @@ function makeRequest(pathname: string, sessionCookie?: string) {
     },
     cookies: {
       get: vi.fn((name: string) => {
-        if (sessionCookie && name.startsWith('a_session_')) {
-          return { value: sessionCookie };
-        }
+        if (name in cookies) return { value: cookies[name] };
         return undefined;
       }),
     },
@@ -65,12 +48,10 @@ import { middleware } from '@/middleware';
 
 describe('middleware – Authentifizierungs-Guard', () => {
   beforeAll(() => {
-    process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT   = 'http://localhost:9080/v1';
     process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID = 'testproject';
   });
 
   afterAll(() => {
-    delete process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
     delete process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
   });
 
@@ -79,8 +60,7 @@ describe('middleware – Authentifizierungs-Guard', () => {
   });
 
   it('leitet nicht eingeloggten User auf /auth/login um', async () => {
-    const req = makeRequest('/');
-    const res = await middleware(req as never);
+    const res = await middleware(makeRequest('/') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
     expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
@@ -90,10 +70,14 @@ describe('middleware – Authentifizierungs-Guard', () => {
     expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
 
-  it('leitet auf /auth/login um wenn Session ungültig ist', async () => {
-    mockAccountGet.mockRejectedValueOnce(new Error('Unauthorized'));
-    const res = await middleware(makeRequest('/', 'invalid-session') as never);
-    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+  it('lässt User mit Appwrite Session-Cookie durch', async () => {
+    const res = await middleware(makeRequest('/', { 'a_session_testproject': 'valid-token' }) as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
+  });
+
+  it('lässt User mit plan-it-local Cookie durch (lokaler Modus)', async () => {
+    const res = await middleware(makeRequest('/', { 'plan-it-local': '1' }) as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /auth/login durch ohne Redirect wenn nicht eingeloggt', async () => {
@@ -116,28 +100,15 @@ describe('middleware – Authentifizierungs-Guard', () => {
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
-  it('lässt eingeloggten User auf / durch', async () => {
-    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
-    const res = await middleware(makeRequest('/', 'valid-session') as never);
-    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
-  });
-
   it('lässt eingeloggten User auf /settings durch', async () => {
-    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
-    const res = await middleware(makeRequest('/settings', 'valid-session') as never);
+    const res = await middleware(makeRequest('/settings', { 'a_session_testproject': 'valid-token' }) as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf /wizard durch', async () => {
-    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
-    const res = await middleware(makeRequest('/wizard', 'valid-session') as never);
+    const res = await middleware(makeRequest('/wizard', { 'a_session_testproject': 'valid-token' }) as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
-
-  it('ruft Account.get() auf wenn Session-Cookie vorhanden ist', async () => {
-    mockAccountGet.mockResolvedValueOnce({ $id: 'user-1' });
-    await middleware(makeRequest('/', 'valid-session') as never);
-    expect(mockAccountGet).toHaveBeenCalledTimes(1);
-  });
 });
+
 
