@@ -78,7 +78,7 @@ npm run db:start
 
 # pgAdmin öffnen: http://localhost:5050
 # Login: admin@local.dev / admin
-# PostgreSQL: localhost:5432 / a-plan / postgres / postgres
+# PostgreSQL: localhost:5432 / plan-it / postgres / postgres
 
 # DB stoppen
 npm run db:stop
@@ -100,7 +100,7 @@ Für persistente Cloud-Speicherung mit Authentifizierung:
 
 1. Appwrite-Instanz anlegen – [Appwrite Cloud](https://cloud.appwrite.io) (kostenlos) oder Self-Hosted
 2. Neues Projekt anlegen, Projekt-ID notieren
-3. Datenbank `a-plan` anlegen
+3. Datenbank `plan-it` anlegen
 4. Collections anlegen: `projects`, `tasks`, `chat_messages`, `analysis_snapshots`, `jira_configs`, `ai_configs`
 5. API-Key in Appwrite erstellen (alle Datenbank-Scopes)
 6. Umgebungsvariablen setzen:
@@ -110,7 +110,7 @@ Für persistente Cloud-Speicherung mit Authentifizierung:
 NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
 NEXT_PUBLIC_APPWRITE_PROJECT_ID=dein-projekt-id
 APPWRITE_API_KEY=dein-api-key
-NEXT_PUBLIC_APPWRITE_DATABASE_ID=a-plan
+NEXT_PUBLIC_APPWRITE_DATABASE_ID=plan-it
 ```
 
 7. App starten — Benutzer werden automatisch auf `/auth/login` weitergeleitet (E-Mail/Passwort)
@@ -232,7 +232,7 @@ docker-compose.yml                      # PostgreSQL 16 + pgAdmin
 | `NEXT_PUBLIC_APPWRITE_ENDPOINT` | Appwrite API-Endpunkt (Standard: `https://cloud.appwrite.io/v1`) |
 | `NEXT_PUBLIC_APPWRITE_PROJECT_ID` | Appwrite Projekt-ID |
 | `APPWRITE_API_KEY` | Appwrite API-Key (server-seitig, alle DB-Scopes) |
-| `NEXT_PUBLIC_APPWRITE_DATABASE_ID` | Appwrite Datenbank-ID (Standard: `a-plan`) |
+| `NEXT_PUBLIC_APPWRITE_DATABASE_ID` | Appwrite Datenbank-ID (Standard: `plan-it`) |
 
 ---
 

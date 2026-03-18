@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-// Production domain: https://a-plan.io
+// Production domain: https://plan-it.io
 const nextConfig = {
   output: 'standalone',
 };

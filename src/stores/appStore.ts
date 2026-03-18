@@ -208,6 +208,6 @@ export const useAppStore = create<AppStore>()(
         return get().aiConfigs.find(c => c.isActive);
       },
     }),
-    { name: 'a-plan-store' }
+    { name: 'plan-it-store' }
   )
 );

@@ -2,12 +2,12 @@ services:
   # ── PostgreSQL ──────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: a-plan_db
+    container_name: plan-it_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: a-plan
+      POSTGRES_DB: plan-it
     ports:
       - '5432:5432'
     volumes:
@@ -22,7 +22,7 @@ services:
   # ── pgAdmin (Web-UI für die Datenbank) ──────────────────────
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: a-plan_pgadmin
+    container_name: plan-it_pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@local.dev
