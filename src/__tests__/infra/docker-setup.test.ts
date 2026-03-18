@@ -80,8 +80,8 @@ describe('docker-compose.yml – Struktur', () => {
     expect(content).toContain('pgadmin_data:');
   });
 
-  it('environment: POSTGRES_DB = archplanner', () => {
-    expect(content).toContain('POSTGRES_DB: archplanner');
+  it('environment: POSTGRES_DB = plan-it', () => {
+    expect(content).toContain('POSTGRES_DB: plan-it');
   });
 });
 
@@ -114,10 +114,10 @@ describe('docker/pgadmin-servers.json – Struktur', () => {
     expect(server.Port).toBe(5432);
   });
 
-  it('Server verbindet mit archplanner Datenbank', () => {
+  it('Server verbindet mit plan-it Datenbank', () => {
     const servers = config.Servers as Record<string, Record<string, unknown>>;
     const server = Object.values(servers)[0];
-    expect(server.MaintenanceDB).toBe('archplanner');
+    expect(server.MaintenanceDB).toBe('plan-it');
   });
 });
 

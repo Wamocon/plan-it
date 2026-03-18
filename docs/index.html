@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ArchPlanner – Produkthandbuch | WAMOCON</title>
+  <title>plan-it – Produkthandbuch | WAMOCON</title>
   <style>
     /* ── Reset & Base ─────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -406,7 +406,7 @@
     <!-- ── COVER ─────────────────────────────────────────── -->
     <div class="cover">
       <div class="doc-type">Produkthandbuch · Vertraulich · WAMOCON</div>
-      <h1>ArchPlanner</h1>
+      <h1>plan-it</h1>
       <div class="cover-sub">Unternehmensarchitektur planen, analysieren und dokumentieren</div>
       <div class="cover-meta">
         <div class="meta-item"><div class="meta-label">Version</div><div class="meta-value">1.0.0</div></div>
@@ -424,7 +424,7 @@
     <section id="executive-summary">
       <h2><span class="ch-num">1</span> Executive Summary</h2>
 
-      <p>ArchPlanner ist ein webbasiertes Analyse- und Planungswerkzeug für Unternehmensarchitektur, entwickelt von WAMOCON. Die Anwendung richtet sich an IT-Architekten, Projektleiter und technische Führungskräfte, die den Ist-Zustand ihrer Systemlandschaft strukturiert erfassen, KI-gestützt bewerten und einen konkreten Umsetzungsplan ableiten wollen.</p>
+      <p>plan-it ist ein webbasiertes Analyse- und Planungswerkzeug für Unternehmensarchitektur, entwickelt von WAMOCON. Die Anwendung richtet sich an IT-Architekten, Projektleiter und technische Führungskräfte, die den Ist-Zustand ihrer Systemlandschaft strukturiert erfassen, KI-gestützt bewerten und einen konkreten Umsetzungsplan ableiten wollen.</p>
 
       <div class="card-grid">
         <div class="kpi"><div class="kpi-val" style="color:var(--red)">4</div><div class="kpi-lab">Wizard-Schritte</div></div>
@@ -439,7 +439,7 @@
 
       <div class="info-box green">
         <div class="info-box-title">Produktstatus</div>
-        <p>ArchPlanner befindet sich im produktiven Betrieb (Version 1.0.0). Alle Kernfunktionen sind implementiert und getestet. CI/CD via GitHub Actions ist aktiv; Testergebnisse und Coverage-Berichte werden automatisch auf GitHub Pages publiziert.</p>
+        <p>plan-it befindet sich im produktiven Betrieb (Version 1.0.0). Alle Kernfunktionen sind implementiert und getestet. CI/CD via GitHub Actions ist aktiv; Testergebnisse und Coverage-Berichte werden automatisch auf GitHub Pages publiziert.</p>
       </div>
     </section>
 
@@ -450,19 +450,19 @@
       <h2><span class="ch-num">2</span> Produktübersicht</h2>
 
       <h3 id="pu-beschreibung">2.1 Produktbeschreibung</h3>
-      <p>ArchPlanner adressiert ein strukturelles Problem in wachsenden IT-Organisationen: Die Architekturstandsaufnahme ist zeitaufwendig, inkonsistent und führt selten zu einem priorisierten Handlungsplan. ArchPlanner löst dieses Problem durch einen strukturierten, KI-gestützten Erfassungs- und Analyseprozess, der in wenigen Minuten einen belastbaren Architekturbericht erzeugt.</p>
+      <p>plan-it adressiert ein strukturelles Problem in wachsenden IT-Organisationen: Die Architekturstandsaufnahme ist zeitaufwendig, inkonsistent und führt selten zu einem priorisierten Handlungsplan. plan-it löst dieses Problem durch einen strukturierten, KI-gestützten Erfassungs- und Analyseprozess, der in wenigen Minuten einen belastbaren Architekturbericht erzeugt.</p>
 
       <div class="table-wrap">
         <table>
           <thead><tr><th>Attribut</th><th>Wert</th></tr></thead>
           <tbody>
-            <tr><td>Produktname</td><td>ArchPlanner</td></tr>
+            <tr><td>Produktname</td><td>plan-it</td></tr>
             <tr><td>Produktart</td><td>Web-Applikation (Server-Side Rendering + Client-Side Interaktion)</td></tr>
             <tr><td>Herausgeber</td><td>WAMOCON</td></tr>
             <tr><td>Version</td><td>1.0.0</td></tr>
             <tr><td>Lizenz</td><td>Proprietär / WAMOCON</td></tr>
             <tr><td>Deployment</td><td>Vercel (Produktiv), lokal (Docker/Node.js)</td></tr>
-            <tr><td>Primäre URL</td><td>a-plan.io</td></tr>
+            <tr><td>Primäre URL</td><td>plan-it.io</td></tr>
             <tr><td>Sprache</td><td>Deutsch</td></tr>
           </tbody>
         </table>
@@ -515,7 +515,7 @@
       <h2><span class="ch-num">3</span> Benutzerhandbuch</h2>
 
       <h3 id="bh-auth">3.1 Authentifizierung</h3>
-      <p>Die Authentifizierung in ArchPlanner basiert auf Appwrite und ist für die Cloud-Persistenz von Projekten, Aufgaben und Konfigurationen erforderlich. Die Middleware erzwingt eine gültige Appwrite-Session bei jedem Seitenaufruf.</p>
+      <p>Die Authentifizierung in plan-it basiert auf Appwrite und ist für die Cloud-Persistenz von Projekten, Aufgaben und Konfigurationen erforderlich. Die Middleware erzwingt eine gültige Appwrite-Session bei jedem Seitenaufruf.</p>
 
       <h4>Anmeldeoptionen</h4>
       <div class="table-wrap">
@@ -646,7 +646,7 @@
       <p>Klick auf das Status-Icon wechselt zyklisch den Status. Pro Aufgabe kann eine Notiz hinterlegt werden. Der Gesamtfortschritt über alle Aufgaben eines Projekts wird als Balken und Prozentzahl angezeigt. Aufgaben können mit einem Jira-Vorgang verknüpft werden (siehe 3.6).</p>
 
       <h3 id="bh-jira">3.6 Jira-Integration</h3>
-      <p>ArchPlanner erlaubt die direkte Erzeugung von Jira-Vorgängen aus dem Aufgaben-Tracker. Mehrere Jira-Instanzen können gleichzeitig konfiguriert sein.</p>
+      <p>plan-it erlaubt die direkte Erzeugung von Jira-Vorgängen aus dem Aufgaben-Tracker. Mehrere Jira-Instanzen können gleichzeitig konfiguriert sein.</p>
 
       <ul>
         <li>Konfiguration in <strong>Einstellungen → Jira-Verbindungen</strong></li>
@@ -786,7 +786,7 @@
       <p>Wird im Detail in Kapitel 5 beschrieben.</p>
 
       <h3 id="ta-persistenz">4.5 Datenpersistenz</h3>
-      <p>ArchPlanner betreibt ein <strong>Dual-Persistenz-Modell</strong>: Die Zustand-Bibliothek mit <code>persist</code>-Middleware schreibt den Store-Zustand automatisch in <code>localStorage</code>. Parallel werden alle schreibenden Store-Aktionen an die Appwrite-Datenbankschicht weitergeleitet, sofern Appwrite konfiguriert ist.</p>
+      <p>plan-it betreibt ein <strong>Dual-Persistenz-Modell</strong>: Die Zustand-Bibliothek mit <code>persist</code>-Middleware schreibt den Store-Zustand automatisch in <code>localStorage</code>. Parallel werden alle schreibenden Store-Aktionen an die Appwrite-Datenbankschicht weitergeleitet, sofern Appwrite konfiguriert ist.</p>
 
       <div class="table-wrap">
         <table>
@@ -824,7 +824,7 @@
       <p>Alle Collections speichern eine <code>user_id</code>-Spalte zur anwendungsseitigen Datentrennung. Appwrite-Dokument-IDs werden durch das SDK automatisch als <code>$id</code> und <code>$createdAt</code>/<code>$updatedAt</code> bereitgestellt.</p>
 
       <h3 id="ta-rls">4.8 Zugriffskontrolle</h3>
-      <p>ArchPlanner verwendet anwendungsseitige Zugriffskontrolle: Alle Datenbankabfragen werden in <code>lib/appwrite/db.ts</code> mit <code>Query.equal('user_id', userId)</code> gefiltert. Jede Nutzerin und jeder Nutzer sieht und schreibt ausschließlich eigene Datensätze. Cross-User-Datenzugriff ist durch konsistente <code>user_id</code>-Filterung auf Abfrageebene verhindert.</p>
+      <p>plan-it verwendet anwendungsseitige Zugriffskontrolle: Alle Datenbankabfragen werden in <code>lib/appwrite/db.ts</code> mit <code>Query.equal('user_id', userId)</code> gefiltert. Jede Nutzerin und jeder Nutzer sieht und schreibt ausschließlich eigene Datensätze. Cross-User-Datenzugriff ist durch konsistente <code>user_id</code>-Filterung auf Abfrageebene verhindert.</p>
     </section>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -894,7 +894,7 @@
     <section id="jira-integration">
       <h2><span class="ch-num">6</span> Jira-Integration</h2>
 
-      <p>Die Jira-Integration ist eine optionale Erweiterung des Aufgaben-Trackers. Sie ermöglicht das direkte Anlegen von Jira-Vorgängen aus ArchPlanner heraus, ohne den Bearbeitungskontext zu verlassen.</p>
+      <p>Die Jira-Integration ist eine optionale Erweiterung des Aufgaben-Trackers. Sie ermöglicht das direkte Anlegen von Jira-Vorgängen aus plan-it heraus, ohne den Bearbeitungskontext zu verlassen.</p>
 
       <h3>Technischer Ablauf</h3>
       <ol class="step-list">
@@ -985,8 +985,8 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
         <table>
           <thead><tr><th>Dienst</th><th>Port</th><th>Zugangsdaten</th></tr></thead>
           <tbody>
-            <tr><td>PostgreSQL</td><td>5432</td><td>User: archplanner / Passwort: archplanner / DB: archplanner</td></tr>
-            <tr><td>pgAdmin</td><td>5050</td><td>admin@archplanner.local / admin</td></tr>
+            <tr><td>PostgreSQL</td><td>5432</td><td>User: plan-it / Passwort: plan-it / DB: plan-it</td></tr>
+            <tr><td>pgAdmin</td><td>5050</td><td>admin@plan-it.local / admin</td></tr>
           </tbody>
         </table>
       </div>
@@ -1023,7 +1023,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
     <section id="k6-synthese">
       <h2><span class="ch-num">10</span> K6-Synthese: Produktreife-Framework</h2>
 
-      <p>Die folgende Bewertung strukturiert und synthetisiert den Produktreifestand von ArchPlanner auf K6-Niveau (Bloom: Synthetisieren und Bewerten). Sie dient als übergeordneter Governancerahmen für Produkt-, Architektur- und Betriebsentscheidungen.</p>
+      <p>Die folgende Bewertung strukturiert und synthetisiert den Produktreifestand von plan-it auf K6-Niveau (Bloom: Synthetisieren und Bewerten). Sie dient als übergeordneter Governancerahmen für Produkt-, Architektur- und Betriebsentscheidungen.</p>
 
       <h3>Reifegradmatrix</h3>
       <div class="table-wrap">
@@ -1075,7 +1075,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
       </div>
 
       <h3>Synthese-Bewertung</h3>
-      <p>ArchPlanner ist ein technisch solides, produktionsreifes Werkzeug für seinen definierten Einsatzzweck. Die Kernarchitektur (Next.js + Appwrite + Zustand) ist für das Anwendungsprofil gut gewählt: einfach deploybar, skalierbar auf Einzelnutzer- bis kleines-Team-Niveau, mit vertretbaren Betriebskosten.</p>
+      <p>plan-it ist ein technisch solides, produktionsreifes Werkzeug für seinen definierten Einsatzzweck. Die Kernarchitektur (Next.js + Appwrite + Zustand) ist für das Anwendungsprofil gut gewählt: einfach deploybar, skalierbar auf Einzelnutzer- bis kleines-Team-Niveau, mit vertretbaren Betriebskosten.</p>
 
       <p>Das Dual-Persistenz-Modell (localStorage + Cloud via Appwrite) sichert Datenverfügbarkeit auch bei Netzwerkunterbrechungen. Die KI-Engine ist durch den vollständigen lokalen Fallback gegen API-Ausfälle abgesichert – ein bewusstes, qualitätssicherndes Entwurfsprinzip.</p>
 
@@ -1199,7 +1199,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
     <section id="management-fazit">
       <h2><span class="ch-num">12</span> Management-Fazit</h2>
 
-      <p>ArchPlanner ist ein funktionell vollständiges, technisch solides Produkt für seinen definierten Einsatzzweck. Der Gesamtreifegrad beträgt <strong>76/100</strong>.</p>
+      <p>plan-it ist ein funktionell vollständiges, technisch solides Produkt für seinen definierten Einsatzzweck. Der Gesamtreifegrad beträgt <strong>76/100</strong>.</p>
 
       <div class="info-box green">
         <div class="info-box-title">Stärken</div>
@@ -1231,7 +1231,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
 
 <!-- ── PAGE FOOTER ──────────────────────────────────────────── -->
 <footer class="page-footer">
-  © 2026 ArchPlanner – WAMOCON &nbsp;·&nbsp; Alle Rechte vorbehalten &nbsp;·&nbsp;
+  © 2026 plan-it – WAMOCON &nbsp;·&nbsp; Alle Rechte vorbehalten &nbsp;·&nbsp;
   Produkthandbuch Version 1.0 &nbsp;·&nbsp; Dokument erstellt: März 2026
 </footer>
 

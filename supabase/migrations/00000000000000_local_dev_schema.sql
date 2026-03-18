@@ -1,5 +1,5 @@
 -- ============================================================
--- archplanner – Lokales Entwicklungsschema (ohne Supabase Auth)
+-- plan-it – Lokales Entwicklungsschema (ohne Supabase Auth)
 -- Dieses Schema wird beim Start des Docker-Containers automatisch
 -- angewendet (via docker-entrypoint-initdb.d/).
 -- ============================================================

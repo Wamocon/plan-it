@@ -4,7 +4,7 @@ import { Footer } from '@/components/layout/Footer';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://a-plan.io'),
+  metadataBase: new URL('https://plan-it.io'),
   title: 'Architekturplaner',
   description: 'Unternehmensarchitektur planen, analysieren und dokumentieren',
 };
