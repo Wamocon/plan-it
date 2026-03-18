@@ -1,7 +1,9 @@
 /**
- * Appwrite auth helper – browser-side session management.
- * Replaces the Supabase browser client for auth operations.
+ * Appwrite auth helper – SERVER-ONLY.
+ * Do NOT import this in Client Components or middleware.
+ * Browser auth goes through /api/auth/session (route handler).
  */
+import 'server-only';
 import { Client, Account, ID } from 'node-appwrite';
 
 const ENDPOINT   = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT   || 'http://localhost:9080/v1';
