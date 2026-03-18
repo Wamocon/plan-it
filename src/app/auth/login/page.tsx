@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-sm w-full">
         <div className="text-center mb-6">
           <div className="text-3xl font-bold text-white mb-1">plan-it</div>
-          <div className="text-gray-400 text-sm">Architektur-Analyse-Tool</div>
+          <div className="text-gray-400 text-sm">Architekturplaner – planen &amp; umsetzen</div>
         </div>
 
         <div className="flex rounded-lg overflow-hidden border border-gray-700 mb-6">

@@ -24,8 +24,8 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
         <Link href="/" className="flex items-center gap-3 no-underline">
           <AppLogo size={42} />
           <div>
-            <div className="text-white font-bold text-base leading-tight">Architekturplaner</div>
-            <div className="text-white/50 text-[10px] tracking-wide hidden sm:block">planen · analysieren · dokumentieren</div>
+            <div className="text-white font-bold text-base leading-tight">plan-it</div>
+            <div className="text-white/50 text-[10px] tracking-wide hidden sm:block">Architekturplaner – planen &amp; umsetzen</div>
           </div>
         </Link>
       </div>

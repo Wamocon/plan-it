@@ -1,6 +1,7 @@
-# 📐 Architekturplaner
+# plan-it
+### Architekturplaner – planen & umsetzen
 
-Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchitekturen – entwickelt von WMC.
+Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchitekturen – entwickelt von WAMOCON.
 
 ## Features
 
@@ -157,7 +158,7 @@ Analysebericht mit 8 Tabs + Chat + Jira-Anbindung
 
 - **Next.js 16** (App Router, latest)
 - **React 18** + TypeScript
-- **Tailwind CSS** — Dark Theme, WMC Corporate Design
+- **Tailwind CSS** — Dark Theme, WAMOCON Corporate Design
 - **Zustand** mit `persist`-Middleware (localStorage)
 - **Appwrite** (`node-appwrite`) — Auth + Cloud-DB (optional)
 - **PostgreSQL 16** via Docker — Lokale Schema-Inspektion (pgAdmin)
@@ -187,7 +188,7 @@ src/
 │           └── test/route.ts           # Jira-Verbindung testen
 ├── components/
 │   ├── layout/
-│   │   ├── Header.tsx                  # WMC Header mit AppLogo
+│   │   ├── Header.tsx                  # WAMOCON Header mit AppLogo
 │   │   ├── Footer.tsx                  # Slim-Banner Footer
 │   │   └── Sidebar.tsx                 # Navigation & Projekt-Schnellzugriff
 │   ├── analysis/
