@@ -19,6 +19,6 @@ export function getBrowserClient(): Client {
 }
 
 export const DATABASE_ID =
-  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'archplanner';
+  process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || 'a-plan';
 
 export { ID, Query, Account, Databases };

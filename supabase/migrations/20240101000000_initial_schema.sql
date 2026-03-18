@@ -1,5 +1,5 @@
 -- ============================================================
--- archplanner – Initial Schema
+-- a-plan – Initial Schema
 -- ============================================================
 -- Aktiviere UUID-Erweiterung
 create extension if not exists "pgcrypto";

@@ -208,6 +208,6 @@ export const useAppStore = create<AppStore>()(
         return get().aiConfigs.find(c => c.isActive);
       },
     }),
-    { name: 'archplanner-store' }
+    { name: 'a-plan-store' }
   )
 );

@@ -37,7 +37,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-sm w-full">
         <div className="text-center mb-6">
-          <div className="text-3xl font-bold text-white mb-1">archplanner</div>
+          <div className="text-3xl font-bold text-white mb-1">a-plan</div>
           <div className="text-gray-400 text-sm">Architektur-Analyse-Tool</div>
         </div>
 
