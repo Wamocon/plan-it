@@ -42,6 +42,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // ── Admin-Routen: nur für Admins ──────────────────────────
+  if (pathname.startsWith('/admin')) {
+    const { data: profileData } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profileData || profileData.role !== 'admin') {
+      // Kein Admin → zur Startseite umleiten
+      const homeUrl = request.nextUrl.clone();
+      homeUrl.pathname = '/';
+      return NextResponse.redirect(homeUrl);
+    }
+  }
+
   return supabaseResponse;
 }
 

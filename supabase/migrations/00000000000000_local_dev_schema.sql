@@ -110,6 +110,25 @@ create table if not exists analysis_snapshots (
   taken_at     timestamptz not null default now()
 );
 
+-- ── user_profiles (Rollen-Konzept) ──────────────────────────
+create table if not exists user_profiles (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null unique references local_users(id) on delete cascade,
+  role         text not null default 'user'
+               check (role in ('admin', 'it-architect', 'developer', 'user')),
+  display_name text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create trigger user_profiles_updated_at before update on user_profiles
+  for each row execute function set_updated_at();
+
+-- Dev-Testuser erhält Admin-Rolle
+insert into user_profiles (user_id, role, display_name)
+  values ('00000000-0000-0000-0000-000000000001', 'admin', 'Dev Admin')
+on conflict do nothing;
+
 -- ── Testdaten ────────────────────────────────────────────────
 -- Beispielprojekt für lokale Entwicklung
 insert into projects (id, user_id, wizard_data, analysis) values (

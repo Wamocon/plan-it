@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Project, WizardData, AnalysisResult, Task, TaskStatus, ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig } from '@/types';
+import { Project, WizardData, AnalysisResult, Task, TaskStatus, ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig, UserProfile, UserRole, USER_ROLE_HIERARCHY } from '@/types';
 import {
   loadAllData,
   dbAddProject, dbUpdateAnalysis, dbSetAiPending, dbSetAiFailReason, dbDeleteProject,
@@ -9,6 +9,7 @@ import {
   dbTakeSnapshot,
   dbAddJiraConfig, dbUpdateJiraConfig, dbDeleteJiraConfig,
   dbAddAiConfig, dbUpdateAiConfig, dbDeleteAiConfig, dbSetActiveAiConfig,
+  dbGetUserProfile, dbGetAllUserProfiles, dbUpdateUserRole, dbUpdateDisplayName,
 } from '@/lib/supabase/db';
 
 interface AppStore {
@@ -45,6 +46,17 @@ interface AppStore {
   deleteAiConfig: (id: string) => void;
   setActiveAiConfig: (id: string) => void;
   getActiveAiConfig: () => AiConfig | undefined;
+  // Rollen
+  userProfile: UserProfile | null;
+  allUserProfiles: UserProfile[];
+  loadUserProfile: () => Promise<void>;
+  loadAllUserProfiles: () => Promise<void>;
+  updateUserRole: (userId: string, role: UserRole) => Promise<void>;
+  updateDisplayName: (displayName: string) => Promise<void>;
+  /** Gibt true zurück, wenn der aktuelle User mindestens die angegebene Rolle hat. */
+  hasMinRole: (minRole: UserRole) => boolean;
+  /** Gibt true zurück, wenn der aktuelle User exakt eine der angegebenen Rollen hat. */
+  hasRole: (...roles: UserRole[]) => boolean;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -232,6 +244,48 @@ export const useAppStore = create<AppStore>()(
 
       getActiveAiConfig: () => {
         return get().aiConfigs.find(c => c.isActive);
+      },
+
+      // ── Rollen ──
+      userProfile: null,
+      allUserProfiles: [],
+
+      loadUserProfile: async () => {
+        const profile = await dbGetUserProfile();
+        set({ userProfile: profile });
+      },
+
+      loadAllUserProfiles: async () => {
+        const profiles = await dbGetAllUserProfiles();
+        set({ allUserProfiles: profiles });
+      },
+
+      updateUserRole: async (userId, role) => {
+        await dbUpdateUserRole(userId, role);
+        set(state => ({
+          allUserProfiles: state.allUserProfiles.map(p =>
+            p.userId === userId ? { ...p, role } : p
+          ),
+        }));
+      },
+
+      updateDisplayName: async (displayName) => {
+        await dbUpdateDisplayName(displayName);
+        set(state => ({
+          userProfile: state.userProfile ? { ...state.userProfile, displayName } : null,
+        }));
+      },
+
+      hasMinRole: (minRole) => {
+        const role = get().userProfile?.role;
+        if (!role) return false;
+        return USER_ROLE_HIERARCHY[role] >= USER_ROLE_HIERARCHY[minRole];
+      },
+
+      hasRole: (...roles) => {
+        const role = get().userProfile?.role;
+        if (!role) return false;
+        return roles.includes(role);
       },
     }),
     { name: 'plan-it-store' }

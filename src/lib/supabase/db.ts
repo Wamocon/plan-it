@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   Project, WizardData, AnalysisResult, Task, TaskStatus,
   ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig,
+  UserProfile, UserRole,
 } from '@/types';
 
 // ── Hilfsfunktionen: DB-Rows ↔ App-Typen ────────────────────
@@ -362,4 +363,61 @@ export async function dbDeleteAiConfig(id: string, newActiveId: string | null) {
   if (newActiveId) {
     await supabase.from('ai_configs').update({ is_active: true }).eq('id', newActiveId).eq('user_id', userId);
   }
+}
+
+// ── User Profiles / Rollen ───────────────────────────────────
+
+function rowToUserProfile(row: Record<string, unknown>): UserProfile {
+  return {
+    id:          row.id as string,
+    userId:      row.user_id as string,
+    email:       (row.email as string) ?? '',
+    role:        row.role as UserRole,
+    displayName: row.display_name as string | undefined,
+    createdAt:   row.created_at as string,
+  };
+}
+
+/** Eigenes Profil laden (inkl. E-Mail aus auth.users via JOIN). */
+export async function dbGetUserProfile(): Promise<UserProfile | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+  if (!data) return null;
+  return rowToUserProfile({ ...data, email: user.email ?? '' });
+}
+
+/** Alle Nutzerprofile laden – nur für Admins. */
+export async function dbGetAllUserProfiles(): Promise<UserProfile[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .order('created_at', { ascending: true });
+  return (data ?? []).map(r => rowToUserProfile(r as Record<string, unknown>));
+}
+
+/** Rolle eines Nutzers ändern – nur für Admins. */
+export async function dbUpdateUserRole(userId: string, role: UserRole): Promise<void> {
+  const supabase = createClient();
+  await supabase
+    .from('user_profiles')
+    .update({ role })
+    .eq('user_id', userId);
+}
+
+/** Anzeigenamen des eigenen Profils aktualisieren. */
+export async function dbUpdateDisplayName(displayName: string): Promise<void> {
+  const supabase = createClient();
+  const userId = await getUserId();
+  if (!userId) return;
+  await supabase
+    .from('user_profiles')
+    .update({ display_name: displayName })
+    .eq('user_id', userId);
 }

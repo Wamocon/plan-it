@@ -1,3 +1,31 @@
+// ── Rollen-Konzept ───────────────────────────────────────────────────────────
+export type UserRole = 'admin' | 'it-architect' | 'developer' | 'user';
+
+export const USER_ROLE_LABELS: Record<UserRole, string> = {
+  'admin':        'Administrator',
+  'it-architect': 'IT-Architekt',
+  'developer':    'Entwickler',
+  'user':         'Benutzer',
+};
+
+/** Höherer Wert = mehr Rechte. Wird für hasMinRole()-Vergleiche genutzt. */
+export const USER_ROLE_HIERARCHY: Record<UserRole, number> = {
+  'admin':        4,
+  'it-architect': 3,
+  'developer':    2,
+  'user':         1,
+};
+
+export interface UserProfile {
+  id:           string;
+  userId:       string;
+  email:        string;
+  role:         UserRole;
+  displayName?: string;
+  createdAt:    string;
+}
+
+// ── Allgemeine Typen ─────────────────────────────────────────────────────────
 export type Severity = 'high' | 'medium' | 'low';
 export interface Risk { title: string; severity: Severity; description: string; recommendation: string; }
 export interface SollItem { area: string; target: string; }

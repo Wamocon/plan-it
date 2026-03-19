@@ -3,11 +3,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
 import { useTheme } from '@/components/ui/ThemeProvider';
-import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList, ShieldCheck } from 'lucide-react';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const projects = useAppStore(s => s.projects);
+  const projects    = useAppStore(s => s.projects);
+  const userProfile = useAppStore(s => s.userProfile);
+  const isAdmin     = userProfile?.role === 'admin';
   const { theme } = useTheme();
 
   const openTaskCount = projects.reduce((s, p) => s + (p.tasks ?? []).filter(t => t.status !== 'done').length, 0);
@@ -142,7 +144,22 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       )}
 
-      <div className="mt-auto p-3 border-t border-black/[0.05] dark:border-white/[0.04]">
+      <div className="mt-auto p-3 border-t border-black/[0.05] dark:border-white/[0.04] flex flex-col gap-0.5">
+        {isAdmin && (
+          <Link
+            href="/admin/users"
+            onClick={onNavigate}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${
+              pathname.startsWith('/admin')
+                ? 'bg-[#ff1a1a]/12 text-gray-900 dark:text-white border border-[#ff1a1a]/20'
+                : 'text-gray-500 hover:text-gray-800 hover:bg-black/[0.05] dark:text-white/45 dark:hover:text-white/80 dark:hover:bg-white/[0.05]'
+            }`}
+            style={pathname.startsWith('/admin') ? { boxShadow: '0 0 12px rgba(255,26,26,0.08)' } : {}}
+          >
+            <ShieldCheck size={14} className="shrink-0" />
+            <span>Admin</span>
+          </Link>
+        )}
         <Link
           href="/settings"
           onClick={onNavigate}
