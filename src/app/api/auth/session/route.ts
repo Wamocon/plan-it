@@ -10,7 +10,6 @@ function makeClient(req: NextRequest, res: NextResponse) {
     {
       cookies: {
         getAll() { return req.cookies.getAll(); },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setAll(c) { c.forEach(({ name, value, options }) => res.cookies.set(name, value, options as any)); },
       },
     }
