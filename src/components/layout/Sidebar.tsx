@@ -50,7 +50,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               onClick={onNavigate}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${
                 active
-                  ? 'bg-[#ff1a1a]/12 dark:text-white text-gray-900 border border-[#ff1a1a]/20'
+                  ? 'bg-[#ff1a1a]/12 dark:text-white text-[#cc1111] border border-[#ff1a1a]/20'
                   : 'dark:text-white/45 dark:hover:text-white/80 dark:hover:bg-white/[0.05] text-gray-600 hover:text-gray-900 hover:bg-black/[0.05]'
               }`}
               style={active ? { boxShadow: '0 0 12px rgba(255,26,26,0.08)' } : {}}
@@ -177,7 +177,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${
               pathname.startsWith('/admin')
-                ? 'bg-[#ff1a1a]/12 text-gray-900 dark:text-white border border-[#ff1a1a]/20'
+                ? 'bg-[#ff1a1a]/12 text-[#cc1111] dark:text-white border border-[#ff1a1a]/20'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-black/[0.05] dark:text-white/45 dark:hover:text-white/80 dark:hover:bg-white/[0.05]'
             }`}
             style={pathname.startsWith('/admin') ? { boxShadow: '0 0 12px rgba(255,26,26,0.08)' } : {}}
@@ -191,7 +191,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium no-underline transition-all duration-150 ${
             pathname === '/settings'
-              ? 'bg-[#ff1a1a]/12 text-gray-900 dark:text-white border border-[#ff1a1a]/20'
+              ? 'bg-[#ff1a1a]/12 text-[#cc1111] dark:text-white border border-[#ff1a1a]/20'
               : 'text-gray-600 hover:text-gray-900 hover:bg-black/[0.05] dark:text-white/45 dark:hover:text-white/80 dark:hover:bg-white/[0.05]'
           }`}
           style={pathname === '/settings' ? { boxShadow: '0 0 12px rgba(255,26,26,0.08)' } : {}}
