@@ -76,55 +76,112 @@ input:focus, select:focus {
 }
 
 /* ── Light-Mode: Header ───────────────────────────────────────── */
-html:not(.dark) header {
-  background: linear-gradient(to right, #fff0f0 0%, #fff5f5 30%, #fce8e8 65%, #f0c8c8 100%) !important;
-  box-shadow: 0 2px 28px rgba(255,26,26,0.08) !important;
-}
+/* (Hintergrund via useTheme in Header.tsx gesteuert) */
 
-/* ── Light-Mode: Sidebar ─────────────────────────────────────── */
-html:not(.dark) aside {
-  background: #ffffff !important;
-  border-color: rgba(0,0,0,0.08) !important;
-}
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE – STRUKTURELLE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
 
-html:not(.dark) aside .nav-link-text,
-html:not(.dark) aside span,
-html:not(.dark) aside a {
-  color: #374151;
-}
-
-/* ── Light-Mode: Karten & Surfaces ───────────────────────────── */
-html:not(.dark) .card,
+/* ── Hardcoded dunkle Hintergründe → neutrales Hell ───────────── */
 html:not(.dark) [class*="bg-[#16161a]"],
 html:not(.dark) [class*="bg-[#1a1a1e]"],
 html:not(.dark) [class*="bg-[#0d0809]"],
-html:not(.dark) [class*="bg-[#1c1010]"] {
+html:not(.dark) [class*="bg-[#1c1010]"],
+html:not(.dark) [class*="bg-[#0f0f11]"],
+html:not(.dark) [class*="bg-[#0e0606]"] {
+  background-color: #f7f8fa !important;
+}
+
+/* ── Karten & Surfaces ────────────────────────────────────────── */
+html:not(.dark) .card-shimmer {
+  background: #ffffff !important;
+  border-color: rgba(0,0,0,0.08) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+}
+html:not(.dark) .card-shimmer:hover {
+  border-color: rgba(255,26,26,0.2) !important;
+  box-shadow: 0 6px 20px rgba(255,26,26,0.06), 0 2px 6px rgba(0,0,0,0.05) !important;
+  transform: translateY(-3px);
+}
+html:not(.dark) .card-shimmer::after {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent);
+}
+
+/* Alle Container mit rounded + border in main-content → weißer Hintergrund */
+html:not(.dark) .main-content .rounded-xl.border:not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-purple-"]):not([class*="bg-green-"]):not([class*="bg-[#22"]):not([class*="bg-[#ff"]),
+html:not(.dark) .main-content .rounded-2xl.border:not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-purple-"]):not([class*="bg-green-"]):not([class*="bg-[#22"]):not([class*="bg-[#ff"]),
+html:not(.dark) .main-content .rounded-md.border:not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-purple-"]):not([class*="bg-green-"]):not([class*="bg-[#22"]):not([class*="bg-[#ff"]),
+html:not(.dark) .main-content .rounded-lg.border:not([class*="bg-red-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-purple-"]):not([class*="bg-green-"]):not([class*="bg-[#22"]):not([class*="bg-[#ff"]) {
   background: #ffffff !important;
   border-color: rgba(0,0,0,0.08) !important;
 }
 
-html:not(.dark) .bg-white\/\[0\.03\],
-html:not(.dark) .bg-white\/\[0\.04\],
-html:not(.dark) .bg-white\/\[0\.05\],
-html:not(.dark) .bg-white\/\[0\.06\] {
+/* ── Semantische Alert/Info-Boxen → helle Äquivalente ─────────── */
+html:not(.dark) [class*="bg-red-950/"] {
+  background-color: #fef2f2 !important;
+  border-color: rgba(220,38,38,0.2) !important;
+}
+html:not(.dark) [class*="bg-amber-950/"] {
+  background-color: #fffbeb !important;
+  border-color: rgba(180,83,9,0.2) !important;
+}
+html:not(.dark) [class*="bg-blue-950/"] {
+  background-color: #eff6ff !important;
+  border-color: rgba(29,78,216,0.15) !important;
+}
+html:not(.dark) [class*="bg-purple-950/"] {
+  background-color: #faf5ff !important;
+  border-color: rgba(109,40,217,0.15) !important;
+}
+
+/* Helle Textfarben auf dunklen Alert-Boxen → dunkle Äquivalente */
+html:not(.dark) .text-red-300   { color: #dc2626 !important; }
+html:not(.dark) .text-amber-300 { color: #b45309 !important; }
+html:not(.dark) .text-blue-300  { color: #1d4ed8 !important; }
+html:not(.dark) .text-purple-300 { color: #7c3aed !important; }
+
+/* ── Borders: white opacity → grau ───────────────────────────── */
+html:not(.dark) .main-content [class*="border-white"],
+html:not(.dark) .main-content [class*="border-b-white"] {
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* ── Text: white-Reihe → graue Skala ─────────────────────────── */
+html:not(.dark) .main-content .text-white:not(button):not([role="button"]) {
+  color: #18181b !important;
+}
+/* Hoch-opake weiß → Sekundärtext */
+html:not(.dark) .main-content .text-white\/80,
+html:not(.dark) .main-content .text-white\/70 { color: #374151 !important; }
+/* Mittel-opake weiß → gedämpft */
+html:not(.dark) .main-content [class*="text-white/6"],
+html:not(.dark) .main-content [class*="text-white/5"],
+html:not(.dark) .main-content [class*="text-white/4"] { color: #6b7280 !important; }
+/* Niedrig-opake weiß → sehr gedämpft */
+html:not(.dark) .main-content [class*="text-white/3"],
+html:not(.dark) .main-content [class*="text-white/2"],
+html:not(.dark) .main-content [class*="text-white/1"] { color: #9ca3af !important; }
+/* Tailwind arbitrary values (z.B. text-white/[0.35]) */
+html:not(.dark) .main-content [class*="text-white/["] { color: #9ca3af !important; }
+
+/* Weiß-Text auf farbigen CTA-Buttons/-Links bleibt weiß */
+html:not(.dark) a[class*="bg-[#ff"],
+html:not(.dark) button.bg-purple-600,
+html:not(.dark) button.bg-purple-700 { color: #ffffff !important; }
+
+/* ── Sidebar: white background für bg-white/* Elemente ─────────── */
+html:not(.dark) .main-content [class*="bg-white/[0.0"],
+html:not(.dark) .main-content [class*="bg-white/[0.1"] {
   background-color: rgba(0,0,0,0.03) !important;
 }
 
-/* ── Light-Mode: Text ─────────────────────────────────────────── */
-html:not(.dark) .text-white {
-  color: #18181b !important;
+/* ── Footer ─────────────────────────────────────────────────────── */
+html:not(.dark) footer {
+  background: #f0f0f3 !important;
+  border-color: rgba(0,0,0,0.06) !important;
 }
-html:not(.dark) .text-white\/45,
-html:not(.dark) .text-white\/50,
-html:not(.dark) .text-white\/60,
-html:not(.dark) .text-white\/70 {
-  color: rgba(24,24,27,0.6) !important;
-}
-html:not(.dark) .text-white\/20,
-html:not(.dark) .text-white\/25,
-html:not(.dark) .text-white\/30,
-html:not(.dark) .text-white\/35 {
-  color: rgba(24,24,27,0.35) !important;
+html:not(.dark) footer [class*="text-white"] {
+  color: #9ca3af !important;
 }
 
 /* Shimmer-Hover für Karten */
