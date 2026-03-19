@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
           {
             type: 'paragraph',
             content: [
-              { type: 'text', text: 'Erstellt durch Architekturplaner.', marks: [{ type: 'em' }] },
+              { type: 'text', text: 'Erstellt durch plan-IT.', marks: [{ type: 'em' }] },
             ],
           },
         ],

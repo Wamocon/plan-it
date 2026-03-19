@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { Menu } from 'lucide-react';
-import { AppLogo } from '@/components/ui/AppLogo';
+import { AppLogoWordmark } from '@/components/ui/AppLogo';
 
 export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
   return (
@@ -21,12 +21,8 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
         >
           <Menu size={20} />
         </button>
-        <Link href="/" className="flex items-center gap-3 no-underline">
-          <AppLogo size={42} />
-          <div>
-            <div className="text-white font-bold text-base leading-tight">plan-it</div>
-            <div className="text-white/50 text-[10px] tracking-wide hidden sm:block">Architekturplaner – planen &amp; umsetzen</div>
-          </div>
+        <Link href="/" className="flex items-center no-underline">
+          <AppLogoWordmark height={44} showTagline={true} />
         </Link>
       </div>
       <div className="flex items-stretch">
