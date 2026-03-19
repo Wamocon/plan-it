@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AppLogoWordmark } from '@/components/ui/AppLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,57 +34,93 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-sm w-full">
-        <div className="text-center mb-6">
-          <div className="text-3xl font-bold text-white mb-1">plan-it</div>
-          <div className="text-gray-400 text-sm">Architekturplaner – planen &amp; umsetzen</div>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0d0809' }}>
+      <div
+        className="rounded-xl p-8 max-w-sm w-full"
+        style={{
+          background: 'linear-gradient(135deg, #1a0303 0%, #110202 100%)',
+          border: '1px solid rgba(255,26,26,0.25)',
+          boxShadow: '0 0 40px rgba(255,26,26,0.08)',
+        }}
+      >
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <AppLogoWordmark height={52} showTagline={true} />
         </div>
 
-        <div className="flex rounded-lg overflow-hidden border border-gray-700 mb-6">
-          <button onClick={() => setMode('login')} className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'login' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+        {/* Tab-Umschalter */}
+        <div className="flex rounded-lg overflow-hidden mb-6" style={{ border: '1px solid rgba(255,26,26,0.2)' }}>
+          <button
+            onClick={() => setMode('login')}
+            className="flex-1 py-2 text-sm font-medium transition-colors"
+            style={mode === 'login'
+              ? { background: '#ff1a1a', color: '#fff' }
+              : { background: 'transparent', color: 'rgba(255,255,255,0.4)' }}
+          >
             Anmelden
           </button>
-          <button onClick={() => setMode('register')} className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'register' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+          <button
+            onClick={() => setMode('register')}
+            className="flex-1 py-2 text-sm font-medium transition-colors"
+            style={mode === 'register'
+              ? { background: '#ff1a1a', color: '#fff' }
+              : { background: 'transparent', color: 'rgba(255,255,255,0.4)' }}
+          >
             Registrieren
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-400 mb-1">E-Mail</label>
+            <label className="block text-sm mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>E-Mail</label>
             <input
               type="email" required value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-white text-sm outline-none transition-colors"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,26,26,0.2)' }}
+              onFocus={e => (e.target.style.borderColor = 'rgba(255,26,26,0.6)')}
+              onBlur={e => (e.target.style.borderColor = 'rgba(255,26,26,0.2)')}
               placeholder="name@firma.de"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-400 mb-1">Passwort</label>
+            <label className="block text-sm mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Passwort</label>
             <input
               type="password" required value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+              className="w-full rounded-lg px-3 py-2 text-white text-sm outline-none transition-colors"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,26,26,0.2)' }}
+              onFocus={e => (e.target.style.borderColor = 'rgba(255,26,26,0.6)')}
+              onBlur={e => (e.target.style.borderColor = 'rgba(255,26,26,0.2)')}
               placeholder="••••••••"
             />
           </div>
           {error && <p className="text-red-400 text-sm">{error}</p>}
           <button
             type="submit" disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg py-2 text-sm font-medium transition-colors"
+            className="w-full rounded-lg py-2 text-sm font-medium transition-opacity disabled:opacity-50"
+            style={{ background: '#ff1a1a', color: '#fff', boxShadow: '0 0 16px rgba(255,26,26,0.3)' }}
           >
-            {loading ? 'Lädt\u2026' : mode === 'login' ? 'Anmelden' : 'Konto erstellen'}
+            {loading ? 'Lädt…' : mode === 'login' ? 'Anmelden' : 'Konto erstellen'}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-gray-600 text-xs">F\u00fcr lokale Nutzung einfach weiter ohne Login</p>
+        <div className="mt-5 text-center">
+          <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.25)' }}>Für lokale Nutzung einfach weiter ohne Login</p>
           <button
             onClick={async () => {
               await fetch('/api/auth/local', { method: 'POST' });
               router.push('/');
               router.refresh();
             }}
-            className="mt-2 w-full border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white rounded-lg py-2 text-sm transition-colors"
+            className="w-full rounded-lg py-2 text-sm transition-colors"
+            style={{ border: '1px solid rgba(255,26,26,0.2)', color: 'rgba(255,255,255,0.5)' }}
+            onMouseEnter={e => {
+              (e.target as HTMLButtonElement).style.borderColor = 'rgba(255,26,26,0.5)';
+              (e.target as HTMLButtonElement).style.color = 'rgba(255,255,255,0.85)';
+            }}
+            onMouseLeave={e => {
+              (e.target as HTMLButtonElement).style.borderColor = 'rgba(255,26,26,0.2)';
+              (e.target as HTMLButtonElement).style.color = 'rgba(255,255,255,0.5)';
+            }}
           >
             Ohne Anmeldung fortfahren →
           </button>
@@ -92,3 +129,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

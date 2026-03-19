@@ -5,8 +5,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://plan-it.io'),
-  title: 'Architekturplaner',
-  description: 'Unternehmensarchitektur planen, analysieren und dokumentieren',
+  title: 'plan-IT – IT-Architektur analysieren · planen · umsetzen',
+  description: 'IT-Architektur analysieren · planen · umsetzen',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

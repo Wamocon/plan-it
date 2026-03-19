@@ -8,4 +8,4 @@ next-env.d.ts
 tmp/
 templates/wmc_extracted/
 coverage/
-
+defaultWorker.agent.md
