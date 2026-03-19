@@ -25,11 +25,18 @@ vi.mock('next/server', () => ({
 
 // Mock @supabase/ssr so no real HTTP calls happen
 let mockUser: { id: string } | null = null;
+let mockProfileRow: { role: string } | null = null;
+
 vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(() => ({
     auth: {
       getUser: vi.fn(async () => ({ data: { user: mockUser } })),
     },
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq:     vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: mockProfileRow, error: null }),
+    })),
     cookies: { set: vi.fn() },
   })),
 }));
@@ -73,6 +80,7 @@ describe('middleware – Authentifizierungs-Guard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUser = null;
+    mockProfileRow = null;
   });
 
   it('leitet nicht eingeloggten User auf /auth/login um', async () => {
@@ -121,6 +129,62 @@ describe('middleware – Authentifizierungs-Guard', () => {
   it('lässt eingeloggten User auf /wizard durch', async () => {
     mockUser = { id: 'user-123' };
     const res = await middleware(makeRequest('/wizard') as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
+  });
+});
+
+// ── Admin-Routen-Schutz ──────────────────────────────────────
+
+describe('middleware – Admin-Routen-Guard', () => {
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+  });
+
+  afterAll(() => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUser = null;
+    mockProfileRow = null;
+  });
+
+  it('leitet nicht eingeloggten User von /admin/users auf /auth/login um', async () => {
+    const res = await middleware(makeRequest('/admin/users') as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+    expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
+  });
+
+  it('leitet eingeloggten Nicht-Admin von /admin/users auf / um', async () => {
+    mockUser = { id: 'user-123' };
+    mockProfileRow = { role: 'developer' };
+    const res = await middleware(makeRequest('/admin/users') as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+    expect((res as unknown as Record<string, unknown>).destination).toBe('/');
+  });
+
+  it('leitet User ohne Profil-Eintrag von /admin/* auf / um', async () => {
+    mockUser = { id: 'user-123' };
+    mockProfileRow = null;
+    const res = await middleware(makeRequest('/admin/users') as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+    expect((res as unknown as Record<string, unknown>).destination).toBe('/');
+  });
+
+  it('lässt Admin auf /admin/users durch', async () => {
+    mockUser = { id: 'admin-1' };
+    mockProfileRow = { role: 'admin' };
+    const res = await middleware(makeRequest('/admin/users') as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
+  });
+
+  it('lässt Admin auch auf verschachtelten /admin/*-Pfaden durch', async () => {
+    mockUser = { id: 'admin-1' };
+    mockProfileRow = { role: 'admin' };
+    const res = await middleware(makeRequest('/admin/settings') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 });

@@ -9,12 +9,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const loadFromSupabase = useAppStore(s => s.loadFromSupabase);
+  const loadUserProfile  = useAppStore(s => s.loadUserProfile);
 
   const isAuthPage = pathname.startsWith('/auth/');
 
-  // Load cloud data once on mount (no-op when user is not logged in)
+  // Load cloud data and user profile once on mount
   useEffect(() => {
     void loadFromSupabase();
+    void loadUserProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

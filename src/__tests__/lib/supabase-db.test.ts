@@ -75,6 +75,10 @@ import {
   dbUpdateAiConfig,
   dbSetActiveAiConfig,
   dbDeleteAiConfig,
+  dbGetUserProfile,
+  dbGetAllUserProfiles,
+  dbUpdateUserRole,
+  dbUpdateDisplayName,
 } from '@/lib/supabase/db';
 
 // ── Testdaten ────────────────────────────────────────────────
@@ -649,6 +653,116 @@ describe('dbDeleteAiConfig()', () => {
   it('bricht ab wenn kein User', async () => {
     setNoUser();
     await dbDeleteAiConfig('ai-1', null);
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+});
+
+// ── dbGetUserProfile ─────────────────────────────────────────
+
+describe('dbGetUserProfile()', () => {
+  it('gibt null zurück wenn nicht eingeloggt', async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null } });
+    const result = await dbGetUserProfile();
+    expect(result).toBeNull();
+  });
+
+  it('fragt user_profiles mit .single() ab', async () => {
+    // User mit E-Mail für diesen Test
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: 'test-user-id', email: 'dev@test.de' } } });
+
+    const singleBuilder = makeBuilder();
+    (singleBuilder as Record<string, unknown>).single = vi.fn().mockResolvedValue({
+      data: {
+        id: 'profile-1',
+        user_id: 'test-user-id',
+        role: 'developer',
+        display_name: 'Dev User',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+      error: null,
+    });
+    mockFrom.mockReturnValue(singleBuilder);
+
+    const result = await dbGetUserProfile();
+    expect(mockFrom).toHaveBeenCalledWith('user_profiles');
+    expect(result?.role).toBe('developer');
+    expect(result?.displayName).toBe('Dev User');
+    expect(result?.email).toBe('dev@test.de');
+  });
+
+  it('gibt null zurück wenn kein Profil in DB', async () => {
+    const singleBuilder = makeBuilder();
+    (singleBuilder as Record<string, unknown>).single = vi.fn().mockResolvedValue({ data: null, error: null });
+    mockFrom.mockReturnValue(singleBuilder);
+
+    const result = await dbGetUserProfile();
+    expect(result).toBeNull();
+  });
+});
+
+// ── dbGetAllUserProfiles ──────────────────────────────────────
+
+describe('dbGetAllUserProfiles()', () => {
+  it('fragt alle user_profiles geordnet ab', async () => {
+    await dbGetAllUserProfiles();
+    expect(mockFrom).toHaveBeenCalledWith('user_profiles');
+    const builder = getLastBuilder();
+    expect(builder.select).toHaveBeenCalledWith('*');
+    expect(builder.order).toHaveBeenCalledWith('created_at', { ascending: true });
+  });
+
+  it('gibt leeres Array zurück wenn keine Profile vorhanden', async () => {
+    currentBuilder = makeBuilder([]);
+    mockFrom.mockReturnValue(currentBuilder);
+    const result = await dbGetAllUserProfiles();
+    expect(result).toEqual([]);
+  });
+
+  it('mapped Roh-Rows korrekt auf UserProfile-Objekte', async () => {
+    const rawRow = {
+      id: 'p1',
+      user_id: 'u1',
+      role: 'admin',
+      display_name: 'Admin User',
+      created_at: '2024-01-01T00:00:00Z',
+    };
+    currentBuilder = makeBuilder([rawRow]);
+    mockFrom.mockReturnValue(currentBuilder);
+
+    const result = await dbGetAllUserProfiles();
+    expect(result).toHaveLength(1);
+    expect(result[0].userId).toBe('u1');
+    expect(result[0].role).toBe('admin');
+    expect(result[0].displayName).toBe('Admin User');
+  });
+});
+
+// ── dbUpdateUserRole ──────────────────────────────────────────
+
+describe('dbUpdateUserRole()', () => {
+  it('aktualisiert die Rolle in user_profiles', async () => {
+    await dbUpdateUserRole('u1', 'it-architect');
+    expect(mockFrom).toHaveBeenCalledWith('user_profiles');
+    const builder = getLastBuilder();
+    expect(builder.update).toHaveBeenCalledWith({ role: 'it-architect' });
+    expect(builder.eq).toHaveBeenCalledWith('user_id', 'u1');
+  });
+});
+
+// ── dbUpdateDisplayName ───────────────────────────────────────
+
+describe('dbUpdateDisplayName()', () => {
+  it('aktualisiert display_name im eigenen Profil', async () => {
+    await dbUpdateDisplayName('Max Mustermann');
+    expect(mockFrom).toHaveBeenCalledWith('user_profiles');
+    const builder = getLastBuilder();
+    expect(builder.update).toHaveBeenCalledWith({ display_name: 'Max Mustermann' });
+    expect(builder.eq).toHaveBeenCalledWith('user_id', 'test-user-id');
+  });
+
+  it('bricht ab wenn kein User eingeloggt', async () => {
+    setNoUser();
+    await dbUpdateDisplayName('Test');
     expect(mockFrom).not.toHaveBeenCalled();
   });
 });
