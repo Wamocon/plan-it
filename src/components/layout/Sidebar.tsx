@@ -2,15 +2,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
-import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList } from 'lucide-react';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const projects = useAppStore(s => s.projects);
 
+  const openTaskCount = projects.reduce((s, p) => s + (p.tasks ?? []).filter(t => t.status !== 'done').length, 0);
+
   const navItems = [
     { href: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { href: '/wizard', icon: PlusCircle, label: 'Neues Projekt', exact: true },
+    { href: '/tasks', icon: ClipboardList, label: 'Aufgabensteuerung', exact: true },
     { href: '/compare', icon: GitCompare, label: 'Vergleich', exact: true },
   ];
 
@@ -22,6 +25,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   const totalHighRisks = projects.reduce((s, p) =>
     s + p.analysis.risks.filter(r => r.severity === 'high').length, 0);
+
+  const totalTasksDone = projects.reduce((s, p) =>
+    s + (p.tasks ?? []).filter(t => t.status === 'done').length, 0);
+  const totalTasks = projects.reduce((s, p) => s + (p.tasks ?? []).length, 0);
 
   return (
     <>
@@ -51,6 +58,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                   {projects.length}
                 </span>
               )}
+              {item.href === '/tasks' && openTaskCount > 0 && (
+                <span className="ml-auto text-[9px] font-bold bg-amber-400/15 text-amber-400/80 px-1.5 py-0.5 rounded-full">
+                  {openTaskCount}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -78,10 +90,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               <div className="text-[9px] text-white/30 mt-0.5">Hohe Risiken</div>
             </div>
             <div>
-              <div className="text-lg font-black text-purple-400 leading-none">
-                {projects.filter(p => p.analysis.source === 'ai').length}
+              <div className={`text-lg font-black leading-none ${openTaskCount > 0 ? 'text-amber-400' : 'text-[#22aa66]'}`}>
+                {totalTasks > 0 ? `${totalTasksDone}/${totalTasks}` : '–'}
               </div>
-              <div className="text-[9px] text-white/30 mt-0.5">KI-Analysen</div>
+              <div className="text-[9px] text-white/30 mt-0.5">Aufgaben</div>
             </div>
           </div>
         </div>
