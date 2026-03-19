@@ -198,6 +198,11 @@ html:not(.dark) button.bg-purple-700 {
   color: #ffffff !important;
 }
 
+/* Ausnahme: Sidebar-Links behalten grau (bg-[#ff.../12 = nur Hintergrund-Tint) */
+html:not(.dark) aside a[class*="bg-[#ff"] {
+  color: #374151 !important;
+}
+
 /* ── Sidebar: weiß/transparent bg Varianten ─────────────────── */
 html:not(.dark) .main-content [class*="bg-white\/[0.0"],
 html:not(.dark) .main-content [class*="bg-white\/[0.1"] {
