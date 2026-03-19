@@ -7,6 +7,7 @@ import { RiskHeatmap } from './RiskHeatmap';
 import { ScoreTrend } from './ScoreTrend';
 import { TaskTracker } from './TaskTracker';
 import { ProjectChat } from './ProjectChat';
+import { useTheme } from '@/components/ui/ThemeProvider';
 
 const scoreStyle = (s: number) =>
   s >= 71 ? 'text-[#22aa66] bg-[#22aa66]/10 border-[#22aa66]/30' :
@@ -25,6 +26,7 @@ export function AnalysisView({ project }: { project: Project }) {
   const [exporting, setExporting] = useState<'pdf' | 'word' | null>(null);
   const updateAnalysis = useAppStore(s => s.updateAnalysis);
   const getActiveAiConfig = useAppStore(s => s.getActiveAiConfig);
+  const { theme } = useTheme();
   const { data, analysis, aiPending, aiFailReason } = project;
   const { risks, soll, waves, summary, source, score, scoreLabel } = analysis;
 
@@ -189,7 +191,7 @@ export function AnalysisView({ project }: { project: Project }) {
             className="px-3 py-1.5 border-b-[3px] bg-transparent cursor-pointer text-xs font-medium transition-colors shrink-0 whitespace-nowrap"
             style={{
               borderBottomColor: tab === t.id ? t.color : 'transparent',
-              color: tab === t.id ? t.color : 'rgba(255,255,255,0.35)',
+              color: tab === t.id ? t.color : (theme === 'dark' ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)'),
               fontWeight: tab === t.id ? 700 : 400,
             }}>
             {t.l}

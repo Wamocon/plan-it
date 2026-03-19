@@ -3,14 +3,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
 import { useTheme } from '@/components/ui/ThemeProvider';
-import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList, ShieldCheck, Sun, Moon } from 'lucide-react';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const projects    = useAppStore(s => s.projects);
   const userProfile = useAppStore(s => s.userProfile);
   const isAdmin     = userProfile?.role === 'admin';
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const openTaskCount = projects.reduce((s, p) => s + (p.tasks ?? []).filter(t => t.status !== 'done').length, 0);
 
@@ -145,6 +145,32 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       )}
 
       <div className="mt-auto p-3 border-t border-black/[0.05] dark:border-white/[0.04] flex flex-col gap-0.5">
+        {/* Theme-Umschalter */}
+        <div className="mb-2 p-0.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex">
+          <button
+            onClick={() => setTheme('light')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-semibold transition-all ${
+              theme === 'light'
+                ? 'bg-white text-[#ff1a1a] shadow-sm'
+                : 'text-gray-400 hover:text-gray-600 dark:text-white/30 dark:hover:text-white/55'
+            }`}
+          >
+            <Sun size={11} />
+            <span>Hell</span>
+          </button>
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[11px] font-semibold transition-all ${
+              theme === 'dark'
+                ? 'bg-white/[0.12] text-[#ff1a1a]'
+                : 'text-gray-400 hover:text-gray-600 dark:text-white/30 dark:hover:text-white/55'
+            }`}
+          >
+            <Moon size={11} />
+            <span>Dunkel</span>
+          </button>
+        </div>
+
         {isAdmin && (
           <Link
             href="/admin/users"
@@ -204,11 +230,11 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
             className="fixed inset-y-0 left-0 z-50 flex flex-col w-72 md:hidden overflow-y-auto"
             style={{ background: sidebarBgMobile }}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] shrink-0">
-              <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Navigation</span>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.07] dark:border-white/[0.06] shrink-0">
+              <span className="text-[9px] font-bold text-black/30 dark:text-white/30 uppercase tracking-widest">Navigation</span>
               <button
                 onClick={onClose}
-                className="text-white/40 hover:text-white bg-transparent border-none cursor-pointer p-1 rounded transition-colors"
+                className="text-gray-400 hover:text-gray-700 dark:text-white/40 dark:hover:text-white bg-transparent border-none cursor-pointer p-1 rounded transition-colors"
                 aria-label="Menü schließen"
               >
                 <X size={18} />

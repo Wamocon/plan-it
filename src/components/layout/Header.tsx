@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Menu, LogOut } from 'lucide-react';
 import { AppLogoWordmark } from '@/components/ui/AppLogo';
-import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/components/ui/ThemeProvider';
 import { useAppStore } from '@/stores/appStore';
 
@@ -45,7 +44,6 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
         </Link>
       </div>
       <div className="flex items-stretch gap-2">
-        <ThemeToggle />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/wamocon-logo.png" alt="WMC Logo" className="h-full w-auto object-contain" />
         <button
