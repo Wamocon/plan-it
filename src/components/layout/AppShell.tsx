@@ -15,8 +15,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Load cloud data and user profile once on mount
   useEffect(() => {
-    void loadFromSupabase();
-    void loadUserProfile();
+    void loadFromSupabase().catch(() => {/* Supabase nicht konfiguriert */});
+    void loadUserProfile().catch(() => {/* Supabase nicht konfiguriert */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
