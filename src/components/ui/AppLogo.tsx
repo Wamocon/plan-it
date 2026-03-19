@@ -8,6 +8,7 @@
 //  LEGACY  Isometrische 3D-Schichten (bisheriges Logo)
 // ──────────────────────────────────────────────────────────────────────────────
 const ACTIVE_LOGO: 'A' | 'B' | 'C' | 'D' | 'LEGACY' = 'A';
+import { useTheme } from '@/components/ui/ThemeProvider';
 
 export function AppLogo({ size = 36 }: { size?: number }) {
   if (ACTIVE_LOGO === 'A') return <LogoA size={size} />;
@@ -19,6 +20,8 @@ export function AppLogo({ size = 36 }: { size?: number }) {
 
 // Wordmark: Icon + "plan-IT" + optionale Tagline in einem SVG
 export function AppLogoWordmark({ height = 48, showTagline = true }: { height?: number; showTagline?: boolean }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   // ViewBox 230 × 60; Icon nimmt linke 60px ein, Text rechts davon
   const vw = 400, vh = 66;
   const scale = height / vh;
@@ -88,11 +91,11 @@ export function AppLogoWordmark({ height = 48, showTagline = true }: { height?: 
       {/* Trennlinie */}
       <line x1="68" y1="12" x2="68" y2="48" stroke="rgba(255,26,26,0.25)" strokeWidth="1" />
 
-      {/* „plan-" weiß, „IT" rot – gleiche Baseline via tspan */}
+      {/* „plan-" dunkel im Light-Mode, weiß im Dark-Mode; „IT" immer rot */}
       <text x="78" y={showTagline ? 28 : 36}
         fontFamily="system-ui, -apple-system, sans-serif"
         fontSize="24" letterSpacing="-0.5">
-        <tspan fontWeight="600" fill="rgba(255,255,255,0.95)">plan-</tspan>
+        <tspan fontWeight="600" fill={isDark ? 'rgba(255,255,255,0.95)' : '#1e293b'}>plan-</tspan>
         <tspan fontWeight="800" fill="#ff2020">IT</tspan>
       </text>
 
@@ -101,7 +104,7 @@ export function AppLogoWordmark({ height = 48, showTagline = true }: { height?: 
         <text x="78" y="54"
           fontFamily="system-ui, -apple-system, sans-serif"
           fontSize="12" fontWeight="400" letterSpacing="0.3"
-          fill="rgba(255,255,255,0.55)">
+          fill={isDark ? 'rgba(255,255,255,0.55)' : 'rgba(30,41,59,0.55)'}>
           IT-Architektur analysieren · planen · umsetzen
         </text>
       )}
