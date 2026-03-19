@@ -95,7 +95,7 @@ export function AppLogoWordmark({ height = 48, showTagline = true }: { height?: 
       <text x="78" y={showTagline ? 28 : 36}
         fontFamily="system-ui, -apple-system, sans-serif"
         fontSize="24" letterSpacing="-0.5">
-        <tspan fontWeight="600" fill={isDark ? 'rgba(255,255,255,0.95)' : '#1e293b'}>plan-</tspan>
+        <tspan fontWeight="600" fill={isDark ? 'rgba(255,255,255,0.95)' : '#111111'}>plan-</tspan>
         <tspan fontWeight="800" fill="#ff2020">IT</tspan>
       </text>
 
@@ -104,7 +104,7 @@ export function AppLogoWordmark({ height = 48, showTagline = true }: { height?: 
         <text x="78" y="54"
           fontFamily="system-ui, -apple-system, sans-serif"
           fontSize="12" fontWeight="400" letterSpacing="0.3"
-          fill={isDark ? 'rgba(255,255,255,0.55)' : 'rgba(30,41,59,0.55)'}>
+          fill={isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)'}>
           IT-Architektur analysieren · planen · umsetzen
         </text>
       )}
