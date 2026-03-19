@@ -133,6 +133,7 @@ export async function getUserId(): Promise<string | null> {
 
 // Lädt alle Daten des eingeloggten Users aus Supabase
 export async function loadAllData() {
+  if (!isSupabaseConfigured()) return null;
   const supabase = createClient();
   const userId = await getUserId();
   if (!userId) return null;
