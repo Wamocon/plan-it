@@ -9,6 +9,10 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Supabase-Env-Vars setzen damit isSupabaseConfigured() true zurückgibt
+process.env.NEXT_PUBLIC_SUPABASE_URL     = 'https://test.supabase.co';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+
 // ── Supabase-Client-Mock ─────────────────────────────────────
 // Bare vi.fn() Referenzen – werden in beforeEach konfiguriert
 const { mockFrom, mockGetUser } = vi.hoisted(() => ({
