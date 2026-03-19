@@ -119,7 +119,13 @@ function rowToAiConfig(row: Record<string, unknown>): AiConfig {
 
 // ── Öffentliche API ──────────────────────────────────────────
 
+/** Gibt null zurück wenn Supabase nicht konfiguriert ist (lokaler Docker-Modus). */
+function isSupabaseConfigured(): boolean {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+}
+
 export async function getUserId(): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
   const supabase = createClient();
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
@@ -127,6 +133,7 @@ export async function getUserId(): Promise<string | null> {
 
 // Lädt alle Daten des eingeloggten Users aus Supabase
 export async function loadAllData() {
+  if (!isSupabaseConfigured()) return null;
   const supabase = createClient();
   const userId = await getUserId();
   if (!userId) return null;
@@ -380,6 +387,7 @@ function rowToUserProfile(row: Record<string, unknown>): UserProfile {
 
 /** Eigenes Profil laden (inkl. E-Mail aus auth.users via JOIN). */
 export async function dbGetUserProfile(): Promise<UserProfile | null> {
+  if (!isSupabaseConfigured()) return null;
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
