@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { useAppStore } from '@/stores/appStore';
+import { SEED_PROJECTS } from '@/lib/seed-data';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,7 +16,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Load cloud data and user profile once on mount
   useEffect(() => {
-    void loadFromSupabase().catch(() => {/* Supabase nicht konfiguriert */});
+    void loadFromSupabase()
+      .then(() => {
+        // Nach Supabase-Load: wenn immer noch leer → Seed-Daten laden
+        const projects = useAppStore.getState().projects;
+        if (projects.length === 0) {
+          useAppStore.setState({ projects: SEED_PROJECTS });
+        }
+      })
+      .catch(() => {
+        // Supabase nicht verfügbar → Seed-Daten laden wenn Store leer
+        const projects = useAppStore.getState().projects;
+        if (projects.length === 0) {
+          useAppStore.setState({ projects: SEED_PROJECTS });
+        }
+      });
     void loadUserProfile().catch(() => {/* Supabase nicht konfiguriert */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
