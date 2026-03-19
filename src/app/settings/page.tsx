@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useAppStore } from '@/stores/appStore';
+import { useTheme } from '@/components/ui/ThemeProvider';
 import { JiraConfig, AiConfig, AiProvider, AI_PROVIDER_LABELS } from '@/types';
 import { Plus, Trash2, ExternalLink, CheckCircle2, AlertCircle, Edit2, Settings, X, RefreshCw, Key, Bot, Star } from 'lucide-react';
 
@@ -30,6 +31,7 @@ const DEFAULT_AI_FORM: AiFormState = {
 const AI_PROVIDERS: AiProvider[] = ['gemini', 'openai'];
 
 export default function SettingsPage() {
+  const { theme } = useTheme();
   // ─── Jira Store ──────────────────────────────────────────────────────────────
   const jiraConfigs = useAppStore(s => s.jiraConfigs);
   const addJiraConfig = useAppStore(s => s.addJiraConfig);
@@ -189,8 +191,8 @@ export default function SettingsPage() {
           <Settings size={18} className="text-[#ff1a1a]/70" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white leading-none">Einstellungen</h1>
-          <p className="text-xs text-white/30 mt-0.5">Integrationen & Konfiguration</p>
+          <h1 className="text-xl font-bold dark:text-white text-gray-900 leading-none">Einstellungen</h1>
+          <p className="text-xs dark:text-white/30 text-gray-500 mt-0.5">Integrationen &amp; Konfiguration</p>
         </div>
       </div>
 
@@ -198,11 +200,11 @@ export default function SettingsPage() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-bold text-white/80 flex items-center gap-2">
+            <h2 className="text-sm font-bold dark:text-white/80 text-gray-800 flex items-center gap-2">
               <Bot size={16} className="text-[#c084fc]" />
               KI-Einstellungen
             </h2>
-            <p className="text-[11px] text-white/30 mt-0.5">
+            <p className="text-[11px] dark:text-white/30 text-gray-500 mt-0.5">
               API-Schlüssel für KI-Analyse und KI-Chat. Ohne Schlüssel ist nur die regelbasierte Analyse verfügbar.
             </p>
           </div>
@@ -221,11 +223,11 @@ export default function SettingsPage() {
         {showAiForm && (
           <div className="rounded-xl border border-[#c084fc]/20 mb-4 overflow-hidden"
             style={{ background: 'rgba(192,132,252,0.04)' }}>
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/[0.06]">
-              <span className="text-sm font-bold text-white/70">
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b dark:border-white/[0.06] border-gray-100">
+              <span className="text-sm font-bold dark:text-white/70 text-gray-700">
                 {editingAiId ? 'API-Schlüssel bearbeiten' : 'Neuer API-Schlüssel'}
               </span>
-              <button onClick={closeAiForm} className="text-white/20 hover:text-white/50 border-none bg-transparent cursor-pointer">
+              <button onClick={closeAiForm} className="dark:text-white/20 dark:hover:text-white/50 text-gray-400 hover:text-gray-700 border-none bg-transparent cursor-pointer">
                 <X size={15} />
               </button>
             </div>
@@ -282,7 +284,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowAiKey(v => !v)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] px-2 py-0.5 rounded border border-white/10 text-white/30 hover:text-white/60 transition-colors bg-transparent cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] px-2 py-0.5 rounded border dark:border-white/10 border-gray-200 dark:text-white/30 text-gray-500 hover:text-gray-700 dark:hover:text-white/60 transition-colors bg-transparent cursor-pointer"
                   >
                     {showAiKey ? 'Verbergen' : 'Anzeigen'}
                   </button>
@@ -312,11 +314,11 @@ export default function SettingsPage() {
 
         {/* AI Config List */}
         {aiConfigs.length === 0 && !showAiForm ? (
-          <div className="rounded-xl border border-white/[0.06] py-10 text-center"
-            style={{ background: 'rgba(255,255,255,0.015)' }}>
-            <Key size={32} className="mx-auto mb-3 opacity-20 text-white" />
-            <p className="text-sm text-white/30 mb-1">Kein API-Schlüssel hinterlegt</p>
-            <p className="text-xs text-white/20">
+            <div className="rounded-xl dark:border-white/[0.06] border-gray-200 border py-10 text-center"
+              style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.015)' : '#f8f9fb' }}>
+              <Key size={32} className="mx-auto mb-3 dark:opacity-20 opacity-30 dark:text-white text-gray-400" />
+              <p className="text-sm dark:text-white/30 text-gray-500 mb-1">Kein API-Schlüssel hinterlegt</p>
+              <p className="text-xs dark:text-white/20 text-gray-400">
               KI-Analyse und KI-Chat sind erst nach Angabe eines API-Schlüssels verfügbar.
             </p>
           </div>
@@ -325,14 +327,16 @@ export default function SettingsPage() {
             {aiConfigs.map(cfg => (
               <div key={cfg.id}
                 className={`rounded-xl border px-4 py-3 flex items-center gap-3 transition-all ${
-                  cfg.isActive ? 'border-[#c084fc]/30' : 'border-white/[0.07]'
+                  cfg.isActive ? 'dark:border-[#c084fc]/30 border-[#c084fc]/40' : 'dark:border-white/[0.07] border-gray-200'
                 }`}
-                style={{ background: cfg.isActive ? 'rgba(192,132,252,0.06)' : 'rgba(14,7,7,0.6)' }}
+                style={{ background: cfg.isActive
+                  ? (theme === 'dark' ? 'rgba(192,132,252,0.06)' : 'rgba(192,132,252,0.06)')
+                  : (theme === 'dark' ? 'rgba(14,7,7,0.6)' : '#ffffff') }}
               >
                 <Bot size={18} className={cfg.isActive ? 'text-[#c084fc]' : 'text-white/25'} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-white/80 truncate">{cfg.label}</span>
+                    <span className="text-sm font-semibold dark:text-white/80 text-gray-800 truncate">{cfg.label}</span>
                     {cfg.isActive && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                         style={{ background: 'rgba(192,132,252,0.15)', color: '#c084fc' }}>
@@ -340,14 +344,14 @@ export default function SettingsPage() {
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-white/30 mt-0.5">
+                  <div className="text-[11px] dark:text-white/30 text-gray-500 mt-0.5">
                     {AI_PROVIDER_LABELS[cfg.provider]} · ••••••{cfg.apiKey.slice(-4)}
                   </div>
                 </div>
                 {!cfg.isActive && (
                   <button
                     onClick={() => setActiveAiConfig(cfg.id)}
-                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border border-white/10 text-white/30 hover:text-[#c084fc] hover:border-[#c084fc]/30 transition-colors bg-transparent cursor-pointer"
+                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border dark:border-white/10 border-gray-200 dark:text-white/30 text-gray-500 hover:text-[#c084fc] hover:border-[#c084fc]/30 transition-colors bg-transparent cursor-pointer"
                     title="Als aktiven Key verwenden"
                   >
                     <Star size={11} /> Aktivieren
@@ -355,7 +359,7 @@ export default function SettingsPage() {
                 )}
                 <button
                   onClick={() => openEditAi(cfg)}
-                  className="text-white/20 hover:text-white/60 border-none bg-transparent cursor-pointer transition-colors p-1"
+                  className="dark:text-white/20 dark:hover:text-white/60 text-gray-400 hover:text-gray-700 border-none bg-transparent cursor-pointer transition-colors p-1"
                   title="Bearbeiten"
                 >
                   <Edit2 size={13} />
@@ -363,7 +367,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => handleDeleteAi(cfg.id)}
                   className={`border-none bg-transparent cursor-pointer transition-colors p-1 ${
-                    deleteAiConfirm === cfg.id ? 'text-red-400' : 'text-white/20 hover:text-red-400'
+                    deleteAiConfirm === cfg.id ? 'text-red-400' : 'dark:text-white/20 dark:hover:text-red-400 text-gray-400 hover:text-red-500'
                   }`}
                   title={deleteAiConfirm === cfg.id ? 'Nochmal klicken zum Bestätigen' : 'Löschen'}
                 >
@@ -379,11 +383,11 @@ export default function SettingsPage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-bold text-white/80 flex items-center gap-2">
+            <h2 className="text-sm font-bold dark:text-white/80 text-gray-800 flex items-center gap-2">
               <JiraLogo size={16} />
               Jira-Verbindungen
             </h2>
-            <p className="text-[11px] text-white/30 mt-0.5">
+            <p className="text-[11px] dark:text-white/30 text-gray-500 mt-0.5">
               Aufgaben direkt als Jira-Vorgänge anlegen. Unterstützt mehrere Instanzen.
             </p>
           </div>
@@ -402,11 +406,11 @@ export default function SettingsPage() {
         {showForm && (
           <div className="rounded-xl border border-[#2684FF]/20 mb-4 overflow-hidden"
             style={{ background: 'rgba(38,132,255,0.04)' }}>
-            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/[0.06]">
-              <span className="text-sm font-bold text-white/70">
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b dark:border-white/[0.06] border-gray-100">
+              <span className="text-sm font-bold dark:text-white/70 text-gray-700">
                 {editingId ? 'Verbindung bearbeiten' : 'Neue Verbindung'}
               </span>
-              <button onClick={closeForm} className="text-white/20 hover:text-white/50 border-none bg-transparent cursor-pointer">
+              <button onClick={closeForm} className="dark:text-white/20 dark:hover:text-white/50 text-gray-400 hover:text-gray-700 border-none bg-transparent cursor-pointer">
                 <X size={15} />
               </button>
             </div>
@@ -522,23 +526,23 @@ export default function SettingsPage() {
 
         {/* Config list */}
         {jiraConfigs.length === 0 && !showForm ? (
-          <div className="rounded-xl border border-white/[0.06] py-10 text-center"
-            style={{ background: 'rgba(255,255,255,0.015)' }}>
-            <JiraLogo size={32} className="mx-auto mb-3 opacity-20" />
-            <p className="text-sm text-white/30 mb-1">Keine Jira-Verbindungen konfiguriert</p>
-            <p className="text-xs text-white/20">Klicke auf „Hinzufügen" um die erste Verbindung einzurichten.</p>
+            <div className="rounded-xl dark:border-white/[0.06] border-gray-200 border py-10 text-center"
+              style={{ background: theme === 'dark' ? 'rgba(255,255,255,0.015)' : '#f8f9fb' }}>
+              <JiraLogo size={32} className="mx-auto mb-3 dark:opacity-20 opacity-30" />
+              <p className="text-sm dark:text-white/30 text-gray-500 mb-1">Keine Jira-Verbindungen konfiguriert</p>
+              <p className="text-xs dark:text-white/20 text-gray-400">Klicke auf „Hinzufügen“ um die erste Verbindung einzurichten.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
             {jiraConfigs.map(cfg => (
               <div key={cfg.id}
-                className="rounded-xl border border-white/[0.07] px-4 py-3 flex items-center gap-3"
-                style={{ background: 'rgba(14,7,7,0.6)' }}
+                className="rounded-xl dark:border-white/[0.07] border-gray-200 border px-4 py-3 flex items-center gap-3"
+                style={{ background: theme === 'dark' ? 'rgba(14,7,7,0.6)' : '#ffffff' }}
               >
                 <JiraLogo size={20} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-white/80 truncate">{cfg.label}</div>
-                  <div className="text-[11px] text-white/30 truncate mt-0.5">
+                  <div className="text-sm font-semibold dark:text-white/80 text-gray-800 truncate">{cfg.label}</div>
+                  <div className="text-[11px] dark:text-white/30 text-gray-500 truncate mt-0.5">
                     {cfg.baseUrl} · {cfg.email} · <span className="font-mono">{cfg.projectKey}</span> · {cfg.issueType}
                   </div>
                 </div>
@@ -546,14 +550,14 @@ export default function SettingsPage() {
                   href={cfg.baseUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-white/20 hover:text-white/50 transition-colors p-1"
+                  className="dark:text-white/20 dark:hover:text-white/50 text-gray-400 hover:text-gray-700 transition-colors p-1"
                   title="Jira öffnen"
                 >
                   <ExternalLink size={13} />
                 </a>
                 <button
                   onClick={() => openEdit(cfg)}
-                  className="text-white/20 hover:text-white/60 border-none bg-transparent cursor-pointer transition-colors p-1"
+                  className="dark:text-white/20 dark:hover:text-white/60 text-gray-400 hover:text-gray-700 border-none bg-transparent cursor-pointer transition-colors p-1"
                   title="Bearbeiten"
                 >
                   <Edit2 size={13} />
@@ -561,7 +565,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => handleDelete(cfg.id)}
                   className={`border-none bg-transparent cursor-pointer transition-colors p-1 ${
-                    deleteConfirm === cfg.id ? 'text-red-400' : 'text-white/20 hover:text-red-400'
+                    deleteConfirm === cfg.id ? 'text-red-400' : 'dark:text-white/20 dark:hover:text-red-400 text-gray-400 hover:text-red-500'
                   }`}
                   title={deleteConfirm === cfg.id ? 'Nochmal klicken zum Bestätigen' : 'Löschen'}
                 >
@@ -578,7 +582,7 @@ export default function SettingsPage() {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-[10px] font-semibold text-white/35 uppercase tracking-wider mb-1">
+    <label className="block text-[10px] font-semibold dark:text-white/35 text-gray-500 uppercase tracking-wider mb-1">
       {children}
     </label>
   );
@@ -587,7 +591,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 const inputStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)',
   border: '1px solid rgba(255,255,255,0.09)',
-  color: 'rgba(255,255,255,0.75)',
+  color: 'inherit',
   outline: 'none',
 };
 
