@@ -34,6 +34,10 @@ vi.mock('@/lib/supabase/db', () => ({
   dbUpdateAiConfig: vi.fn(),
   dbDeleteAiConfig: vi.fn(),
   dbSetActiveAiConfig: vi.fn(),
+  dbGetUserProfile: vi.fn().mockResolvedValue(null),
+  dbGetAllUserProfiles: vi.fn().mockResolvedValue([]),
+  dbUpdateUserRole: vi.fn().mockResolvedValue(undefined),
+  dbUpdateDisplayName: vi.fn().mockResolvedValue(undefined),
 }));
 
 // ── Hilfsobjekte ─────────────────────────────────────────────
@@ -448,6 +452,108 @@ describe('useAppStore', () => {
 
     it('getActiveAiConfig() gibt undefined zurück wenn keine Konfiguration vorhanden', () => {
       expect(useAppStore.getState().getActiveAiConfig()).toBeUndefined();
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Rollen
+  // ────────────────────────────────────────────────────────────
+
+  describe('hasMinRole()', () => {
+    it('gibt false zurück wenn kein Profil geladen', () => {
+      useAppStore.setState({ userProfile: null });
+      expect(useAppStore.getState().hasMinRole('user')).toBe(false);
+    });
+
+    it('Admin hat mindestens jede Rolle', () => {
+      useAppStore.setState({ userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'admin', createdAt: '' } });
+      expect(useAppStore.getState().hasMinRole('admin')).toBe(true);
+      expect(useAppStore.getState().hasMinRole('it-architect')).toBe(true);
+      expect(useAppStore.getState().hasMinRole('developer')).toBe(true);
+      expect(useAppStore.getState().hasMinRole('user')).toBe(true);
+    });
+
+    it('IT-Architekt hat nicht die Admin-Rolle', () => {
+      useAppStore.setState({ userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'it-architect', createdAt: '' } });
+      expect(useAppStore.getState().hasMinRole('admin')).toBe(false);
+      expect(useAppStore.getState().hasMinRole('it-architect')).toBe(true);
+      expect(useAppStore.getState().hasMinRole('developer')).toBe(true);
+    });
+
+    it('Entwickler hat nicht IT-Architekt oder höher', () => {
+      useAppStore.setState({ userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'developer', createdAt: '' } });
+      expect(useAppStore.getState().hasMinRole('it-architect')).toBe(false);
+      expect(useAppStore.getState().hasMinRole('developer')).toBe(true);
+    });
+
+    it('User hat nur Mindest-Rolle user', () => {
+      useAppStore.setState({ userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'user', createdAt: '' } });
+      expect(useAppStore.getState().hasMinRole('developer')).toBe(false);
+      expect(useAppStore.getState().hasMinRole('user')).toBe(true);
+    });
+  });
+
+  describe('hasRole()', () => {
+    it('gibt false zurück wenn kein Profil geladen', () => {
+      useAppStore.setState({ userProfile: null });
+      expect(useAppStore.getState().hasRole('admin')).toBe(false);
+    });
+
+    it('gibt true zurück bei exakter Rollenübereinstimmung', () => {
+      useAppStore.setState({ userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'developer', createdAt: '' } });
+      expect(useAppStore.getState().hasRole('developer')).toBe(true);
+    });
+
+    it('gibt false zurück bei falscher Rolle', () => {
+      useAppStore.setState({ userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'user', createdAt: '' } });
+      expect(useAppStore.getState().hasRole('admin')).toBe(false);
+    });
+
+    it('gibt true zurück wenn eine von mehreren Rollen passt', () => {
+      useAppStore.setState({ userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'it-architect', createdAt: '' } });
+      expect(useAppStore.getState().hasRole('admin', 'it-architect')).toBe(true);
+    });
+  });
+
+  describe('updateUserRole()', () => {
+    it('aktualisiert die Rolle eines Nutzers in allUserProfiles', async () => {
+      useAppStore.setState({
+        allUserProfiles: [
+          { id: '1', userId: 'u1', email: 'a@b.de', role: 'user', createdAt: '' },
+          { id: '2', userId: 'u2', email: 'b@b.de', role: 'developer', createdAt: '' },
+        ],
+      });
+      await useAppStore.getState().updateUserRole('u1', 'it-architect');
+      const updated = useAppStore.getState().allUserProfiles.find(p => p.userId === 'u1');
+      expect(updated?.role).toBe('it-architect');
+    });
+
+    it('lässt andere Profile unberührt', async () => {
+      useAppStore.setState({
+        allUserProfiles: [
+          { id: '1', userId: 'u1', email: 'a@b.de', role: 'user', createdAt: '' },
+          { id: '2', userId: 'u2', email: 'b@b.de', role: 'developer', createdAt: '' },
+        ],
+      });
+      await useAppStore.getState().updateUserRole('u1', 'admin');
+      const other = useAppStore.getState().allUserProfiles.find(p => p.userId === 'u2');
+      expect(other?.role).toBe('developer');
+    });
+  });
+
+  describe('updateDisplayName()', () => {
+    it('aktualisiert displayName im eigenen Profil', async () => {
+      useAppStore.setState({
+        userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'admin', createdAt: '' },
+      });
+      await useAppStore.getState().updateDisplayName('Max Mustermann');
+      expect(useAppStore.getState().userProfile?.displayName).toBe('Max Mustermann');
+    });
+
+    it('tut nichts wenn kein Profil geladen', async () => {
+      useAppStore.setState({ userProfile: null });
+      await useAppStore.getState().updateDisplayName('Test');
+      expect(useAppStore.getState().userProfile).toBeNull();
     });
   });
 });
