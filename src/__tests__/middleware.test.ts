@@ -3,8 +3,7 @@
  *
  * Entscheidungsüberdeckung:
  * - Kein Session-Cookie + geschützte Route   → Redirect zu /auth/login
- * - Session-Cookie vorhanden                 → Pass-through (kein API-Call)
- * - plan-it-local Cookie vorhanden           → Pass-through (lokaler Modus)
+ * - Supabase-Session vorhanden               → Pass-through
  * - Beliebige Route unter /auth/*            → Pass-through (immer)
  * - Beliebige Route unter /api/*             → Pass-through (immer)
  */
@@ -24,9 +23,21 @@ vi.mock('next/server', () => ({
   },
 }));
 
+// Mock @supabase/ssr so no real HTTP calls happen
+let mockUser: { id: string } | null = null;
+vi.mock('@supabase/ssr', () => ({
+  createServerClient: vi.fn(() => ({
+    auth: {
+      getUser: vi.fn(async () => ({ data: { user: mockUser } })),
+    },
+    cookies: { set: vi.fn() },
+  })),
+}));
+
 // ── Hilfsklasse: MinimalRequest ──────────────────────────────
 
 function makeRequest(pathname: string, cookies: Record<string, string> = {}) {
+  const allCookies = Object.entries(cookies).map(([name, value]) => ({ name, value }));
   return {
     nextUrl: {
       pathname,
@@ -39,6 +50,8 @@ function makeRequest(pathname: string, cookies: Record<string, string> = {}) {
         if (name in cookies) return { value: cookies[name] };
         return undefined;
       }),
+      getAll: vi.fn(() => allCookies),
+      set: vi.fn(),
     },
     url: `http://localhost${pathname}`,
   };
@@ -48,15 +61,18 @@ import { middleware } from '@/middleware';
 
 describe('middleware – Authentifizierungs-Guard', () => {
   beforeAll(() => {
-    process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID = 'testproject';
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
   });
 
   afterAll(() => {
-    delete process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID;
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUser = null;
   });
 
   it('leitet nicht eingeloggten User auf /auth/login um', async () => {
@@ -70,13 +86,9 @@ describe('middleware – Authentifizierungs-Guard', () => {
     expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
 
-  it('lässt User mit Appwrite Session-Cookie durch', async () => {
-    const res = await middleware(makeRequest('/', { 'a_session_testproject': 'valid-token' }) as never);
-    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
-  });
-
-  it('lässt User mit plan-it-local Cookie durch (lokaler Modus)', async () => {
-    const res = await middleware(makeRequest('/', { 'plan-it-local': '1' }) as never);
+  it('lässt eingeloggten User durch', async () => {
+    mockUser = { id: 'user-123' };
+    const res = await middleware(makeRequest('/') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
@@ -101,14 +113,14 @@ describe('middleware – Authentifizierungs-Guard', () => {
   });
 
   it('lässt eingeloggten User auf /settings durch', async () => {
-    const res = await middleware(makeRequest('/settings', { 'a_session_testproject': 'valid-token' }) as never);
+    mockUser = { id: 'user-123' };
+    const res = await middleware(makeRequest('/settings') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf /wizard durch', async () => {
-    const res = await middleware(makeRequest('/wizard', { 'a_session_testproject': 'valid-token' }) as never);
+    mockUser = { id: 'user-123' };
+    const res = await middleware(makeRequest('/wizard') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 });
-
-

@@ -1,18 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Project, WizardData, AnalysisResult, Task, TaskStatus, ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig } from '@/types';
-
-// Cloud persistence via server-side API route (node-appwrite must not run in browser).
-function sync(action: string, payload: Record<string, unknown>): void {
-  fetch('/api/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, payload }),
-  }).catch(() => { /* fire-and-forget – localStorage is source of truth */ });
-}
+import {
+  loadAllData,
+  dbAddProject, dbUpdateAnalysis, dbSetAiPending, dbSetAiFailReason, dbDeleteProject,
+  dbAddTask, dbUpdateTask, dbDeleteTask,
+  dbAddChatMessage, dbClearChat,
+  dbTakeSnapshot,
+  dbAddJiraConfig, dbUpdateJiraConfig, dbDeleteJiraConfig,
+  dbAddAiConfig, dbUpdateAiConfig, dbDeleteAiConfig, dbSetActiveAiConfig,
+} from '@/lib/supabase/db';
 
 interface AppStore {
   projects: Project[];
+  // Cloud sync
+  loadFromSupabase: () => Promise<void>;
+  // Projects
   addProject: (data: WizardData, analysis: AnalysisResult) => Project;
   updateAnalysis: (id: string, analysis: AnalysisResult) => void;
   setAiPending: (id: string, pending: boolean) => void;
@@ -48,12 +51,19 @@ export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
       projects: [],
+
+      loadFromSupabase: async () => {
+        const data = await loadAllData();
+        if (data) set({ projects: data.projects, jiraConfigs: data.jiraConfigs, aiConfigs: data.aiConfigs });
+      },
+
       addProject: (data, analysis) => {
         const project: Project = { id: Date.now().toString(), data, analysis, createdAt: new Date().toISOString(), tasks: [], chatHistory: [], snapshots: [] };
         set((state) => ({ projects: [project, ...state.projects] }));
-        sync('addProject', { project });
+        void dbAddProject(project);
         return project;
       },
+
       updateAnalysis: (id, analysis) => {
         set((state) => ({
           projects: state.projects.map(p => {
@@ -68,67 +78,76 @@ export const useAppStore = create<AppStore>()(
               highCount: p.analysis.risks.filter(r => r.severity === 'high').length,
               source: p.analysis.source,
             } : null;
-            sync('updateAnalysis', { id, analysis, snapshot: newSnapshot });
+            void dbUpdateAnalysis(id, analysis, newSnapshot);
             return { ...p, analysis, aiPending: false, snapshots: newSnapshot ? [...snapshots, newSnapshot] : snapshots };
           })
         }));
       },
+
       setAiPending: (id, pending) => {
         set((state) => ({ projects: state.projects.map(p => p.id === id ? { ...p, aiPending: pending } : p) }));
-        sync('setAiPending', { id, pending });
+        void dbSetAiPending(id, pending);
       },
+
       setAiFailReason: (id, reason) => {
         set((state) => ({ projects: state.projects.map(p => p.id === id ? { ...p, aiFailReason: reason, aiPending: false } : p) }));
-        sync('setAiFailReason', { id, reason });
+        void dbSetAiFailReason(id, reason);
       },
+
       deleteProject: (id) => {
         set((state) => ({ projects: state.projects.filter((p) => p.id !== id) }));
-        sync('deleteProject', { id });
+        void dbDeleteProject(id);
       },
+
       getProject: (id) => get().projects.find((p) => p.id === id),
 
       // ── Tasks ──
       addTask: (projectId, waveNumber, waveTitle, item) => {
         const task: Task = { id: Date.now().toString(), waveNumber, waveTitle, item, status: 'open', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? { ...p, tasks: [...(p.tasks || []), task] } : p) }));
-        sync('addTask', { task, projectId });
+        void dbAddTask(task, projectId);
       },
+
       updateTaskStatus: (projectId, taskId, status) => {
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? {
           ...p, tasks: (p.tasks || []).map(t => t.id === taskId ? { ...t, status, updatedAt: new Date().toISOString() } : t)
         } : p) }));
-        sync('updateTask', { id: taskId, updates: { status } });
+        void dbUpdateTask(taskId, { status });
       },
+
       updateTaskNote: (projectId, taskId, note) => {
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? {
           ...p, tasks: (p.tasks || []).map(t => t.id === taskId ? { ...t, note, updatedAt: new Date().toISOString() } : t)
         } : p) }));
-        sync('updateTask', { id: taskId, updates: { note } });
+        void dbUpdateTask(taskId, { note });
       },
+
       deleteTask: (projectId, taskId) => {
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? {
           ...p, tasks: (p.tasks || []).filter(t => t.id !== taskId)
         } : p) }));
-        sync('deleteTask', { id: taskId });
+        void dbDeleteTask(taskId);
       },
+
       setTaskJiraIssue: (projectId, taskId, key, url, configId) => {
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? {
           ...p, tasks: (p.tasks || []).map(t => t.id === taskId
             ? { ...t, jiraIssueKey: key, jiraIssueUrl: url, jiraConfigId: configId, updatedAt: new Date().toISOString() }
             : t)
         } : p) }));
-        sync('updateTask', { id: taskId, updates: { jiraIssueKey: key, jiraIssueUrl: url, jiraConfigId: configId } });
+        void dbUpdateTask(taskId, { jiraIssueKey: key, jiraIssueUrl: url, jiraConfigId: configId });
       },
 
       // ── Chat ──
       addChatMessage: (projectId, message) => {
         const msg: ChatMessage = { ...message, id: Date.now().toString(), createdAt: new Date().toISOString() };
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? { ...p, chatHistory: [...(p.chatHistory || []), msg] } : p) }));
-        sync('addChatMessage', { message: msg, projectId });
+        void dbAddChatMessage(msg, projectId);
       },
+
       clearChat: (projectId) => {
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? { ...p, chatHistory: [] } : p) }));
-        sync('clearChat', { projectId });
+        void dbClearChat(projectId);
       },
 
       // ── Snapshots ──
@@ -144,30 +163,34 @@ export const useAppStore = create<AppStore>()(
             highCount: p.analysis.risks.filter(r => r.severity === 'high').length,
             source: p.analysis.source,
           };
-          sync('takeSnapshot', { snapshot: snap, projectId });
+          void dbTakeSnapshot(snap, projectId);
           return { ...p, snapshots: [...(p.snapshots || []), snap] };
         }) }));
       },
 
       // ── Jira ──
       jiraConfigs: [],
+
       addJiraConfig: (config) => {
         const newConfig: JiraConfig = { ...config, id: Date.now().toString(), createdAt: new Date().toISOString() };
         set(state => ({ jiraConfigs: [...state.jiraConfigs, newConfig] }));
-        sync('addJiraConfig', { config: newConfig });
+        void dbAddJiraConfig(newConfig);
         return newConfig;
       },
+
       updateJiraConfig: (id, config) => {
         set(state => ({ jiraConfigs: state.jiraConfigs.map(c => c.id === id ? { ...c, ...config } : c) }));
-        sync('updateJiraConfig', { id, updates: config });
+        void dbUpdateJiraConfig(id, config);
       },
+
       deleteJiraConfig: (id) => {
         set(state => ({ jiraConfigs: state.jiraConfigs.filter(c => c.id !== id) }));
-        sync('deleteJiraConfig', { id });
+        void dbDeleteJiraConfig(id);
       },
 
       // ── AI ──
       aiConfigs: [],
+
       addAiConfig: (config) => {
         const isFirst = get().aiConfigs.length === 0;
         const newConfig: AiConfig = { ...config, id: Date.now().toString(), isActive: config.isActive || isFirst, createdAt: new Date().toISOString() };
@@ -176,17 +199,19 @@ export const useAppStore = create<AppStore>()(
             ? [...state.aiConfigs.map(c => ({ ...c, isActive: false })), newConfig]
             : [...state.aiConfigs, newConfig],
         }));
-        sync('addAiConfig', { config: newConfig });
+        void dbAddAiConfig(newConfig);
         return newConfig;
       },
+
       updateAiConfig: (id, config) => {
         set(state => ({
           aiConfigs: config.isActive
             ? state.aiConfigs.map(c => ({ ...c, isActive: c.id === id, ...(c.id === id ? config : {}) }))
             : state.aiConfigs.map(c => c.id === id ? { ...c, ...config } : c),
         }));
-        sync('updateAiConfig', { id, updates: config });
+        void dbUpdateAiConfig(id, config);
       },
+
       deleteAiConfig: (id) => {
         set(state => {
           const remaining = state.aiConfigs.filter(c => c.id !== id);
@@ -195,14 +220,16 @@ export const useAppStore = create<AppStore>()(
             remaining[0] = { ...remaining[0], isActive: true };
             newActiveId = remaining[0].id;
           }
-          sync('deleteAiConfig', { id, newActiveId });
+          void dbDeleteAiConfig(id, newActiveId);
           return { aiConfigs: remaining };
         });
       },
+
       setActiveAiConfig: (id) => {
         set(state => ({ aiConfigs: state.aiConfigs.map(c => ({ ...c, isActive: c.id === id })) }));
-        sync('setActiveAiConfig', { id });
+        void dbSetActiveAiConfig(id);
       },
+
       getActiveAiConfig: () => {
         return get().aiConfigs.find(c => c.isActive);
       },

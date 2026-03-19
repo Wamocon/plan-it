@@ -2,7 +2,8 @@
 import { useAppStore } from '@/stores/appStore';
 import type { AnalysisResult, WizardData, Task, TaskStatus } from '@/types';
 
-vi.mock('@/lib/appwrite/db', () => ({
+vi.mock('@/lib/supabase/db', () => ({
+  loadAllData: vi.fn().mockResolvedValue(null),
   dbAddProject: vi.fn(), dbUpdateAnalysis: vi.fn(), dbSetAiPending: vi.fn(),
   dbSetAiFailReason: vi.fn(), dbDeleteProject: vi.fn(),
   dbAddTask: vi.fn(), dbUpdateTask: vi.fn(), dbDeleteTask: vi.fn(),
