@@ -7,7 +7,7 @@ import {
   dbTakeSnapshot,
   dbAddJiraConfig, dbUpdateJiraConfig, dbDeleteJiraConfig,
   dbAddAiConfig, dbUpdateAiConfig, dbDeleteAiConfig, dbSetActiveAiConfig,
-} from '@/lib/appwrite/db';
+} from '@/lib/supabase/db';
 
 export async function POST(request: NextRequest) {
   try {

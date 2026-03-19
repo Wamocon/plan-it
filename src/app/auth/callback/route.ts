@@ -1,8 +1,16 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Auth callback – Appwrite handles sessions via cookies natively
+// Supabase Auth callback – exchanges the code for a session
 export async function GET(request: NextRequest) {
-  const { origin } = new URL(request.url);
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get('code');
+
+  if (code) {
+    const supabase = await createClient();
+    await supabase.auth.exchangeCodeForSession(code);
+  }
+
   return NextResponse.redirect(`${origin}/`);
 }

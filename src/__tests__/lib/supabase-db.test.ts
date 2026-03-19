@@ -606,7 +606,7 @@ describe('dbSetActiveAiConfig()', () => {
       return b;
     });
 
-    await dbSetActiveAiConfig('ai-1', ['ai-1', 'ai-2']);
+    await dbSetActiveAiConfig('ai-1');
     expect(builders.length).toBeGreaterThanOrEqual(2);
     // Erster Aufruf: alle deaktivieren
     expect((builders[0].update as ReturnType<typeof vi.fn>).mock.calls[0][0]).toEqual({ is_active: false });
@@ -616,7 +616,7 @@ describe('dbSetActiveAiConfig()', () => {
 
   it('bricht ab wenn kein User', async () => {
     setNoUser();
-    await dbSetActiveAiConfig('ai-1', ['ai-1']);
+    await dbSetActiveAiConfig('ai-1');
     expect(mockFrom).not.toHaveBeenCalled();
   });
 });

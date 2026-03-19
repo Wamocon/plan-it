@@ -12,9 +12,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useAppStore } from '@/stores/appStore';
 import type { AnalysisResult, WizardData } from '@/types';
 
-// Alle Appwrite-DB-Aufrufe mocken – der Store-Test prüft nur den Zustand-State,
+// Alle Supabase-DB-Aufrufe mocken – der Store-Test prüft nur den Zustand-State,
 // nicht die Datenbank-Persistenz (die wird in supabase-db.test.ts getestet).
-vi.mock('@/lib/appwrite/db', () => ({
+vi.mock('@/lib/supabase/db', () => ({
+  loadAllData: vi.fn().mockResolvedValue(null),
   dbAddProject: vi.fn(),
   dbUpdateAnalysis: vi.fn(),
   dbSetAiPending: vi.fn(),

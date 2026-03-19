@@ -1,31 +1,48 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-
-// node-appwrite ist NICHT Edge-Runtime-kompatibel und darf hier nicht importiert werden.
-// Die vollständige Session-Validierung erfolgt in Server-Komponenten (lib/appwrite/server.ts).
-// Die Middleware prüft nur die Cookie-Existenz als Lightweight-Guard.
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID ?? 'myproject';
 
   // Auth- und API-Routen immer ohne Session-Prüfung durchlassen
   if (pathname.startsWith('/auth/') || pathname.startsWith('/api/')) {
     return NextResponse.next({ request });
   }
 
-  // Appwrite-Session oder lokaler Modus
-  const sessionCookie =
-    request.cookies.get(`a_session_${PROJECT_ID}`)?.value ??
-    request.cookies.get(`a_session_${PROJECT_ID}_legacy`)?.value;
-  const localCookie = request.cookies.get('plan-it-local')?.value;
-
-  if (sessionCookie || localCookie) {
+  // Without Supabase config (local Docker mode) → pass through
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.next({ request });
   }
 
-  const loginUrl = request.nextUrl.clone();
-  loginUrl.pathname = '/auth/login';
-  return NextResponse.redirect(loginUrl);
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // Refresh session – no code between createServerClient and getUser()
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/auth/login';
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {

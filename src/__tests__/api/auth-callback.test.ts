@@ -7,7 +7,14 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 // ── Auth Callback ─────────────────────────────────────────────
-// Appwrite verwaltet Sessions über Cookies nativ – kein Code-Exchange nötig.
+// Mock Supabase server client – vermeidet next/headers außerhalb eines Request-Kontexts
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(async () => ({
+    auth: {
+      exchangeCodeForSession: vi.fn(async () => ({ data: {}, error: null })),
+    },
+  })),
+}));
 
 vi.mock('next/server', () => ({
   NextResponse: {

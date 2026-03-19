@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLogoWordmark } from '@/components/ui/AppLogo';
+import { useAppStore } from '@/stores/appStore';
 
 export default function LoginPage() {
   const router = useRouter();
+  const loadFromSupabase = useAppStore(s => s.loadFromSupabase);
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode]         = useState<'login' | 'register'>('login');
@@ -24,6 +26,8 @@ export default function LoginPage() {
       });
       const data = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok) throw new Error(data.error ?? 'Fehler bei der Anmeldung');
+      // Load user's cloud data before navigating so dashboard is ready immediately
+      await loadFromSupabase();
       router.push('/');
       router.refresh();
     } catch (err: unknown) {
@@ -104,26 +108,9 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-5 text-center">
-          <p className="text-xs mb-2" style={{ color: 'rgba(255,255,255,0.25)' }}>Für lokale Nutzung einfach weiter ohne Login</p>
-          <button
-            onClick={async () => {
-              await fetch('/api/auth/local', { method: 'POST' });
-              router.push('/');
-              router.refresh();
-            }}
-            className="w-full rounded-lg py-2 text-sm transition-colors"
-            style={{ border: '1px solid rgba(255,26,26,0.2)', color: 'rgba(255,255,255,0.5)' }}
-            onMouseEnter={e => {
-              (e.target as HTMLButtonElement).style.borderColor = 'rgba(255,26,26,0.5)';
-              (e.target as HTMLButtonElement).style.color = 'rgba(255,255,255,0.85)';
-            }}
-            onMouseLeave={e => {
-              (e.target as HTMLButtonElement).style.borderColor = 'rgba(255,26,26,0.2)';
-              (e.target as HTMLButtonElement).style.color = 'rgba(255,255,255,0.5)';
-            }}
-          >
-            Ohne Anmeldung fortfahren →
-          </button>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            Noch kein Konto? Wähle &quot;Registrieren&quot; oben.
+          </p>
         </div>
       </div>
     </div>

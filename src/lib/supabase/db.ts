@@ -345,12 +345,12 @@ export async function dbUpdateAiConfig(id: string, patch: Partial<AiConfig>) {
   await supabase.from('ai_configs').update(dbPatch).eq('id', id).eq('user_id', userId);
 }
 
-export async function dbSetActiveAiConfig(activeId: string, allIds: string[]) {
+export async function dbSetActiveAiConfig(activeId: string) {
   const supabase = createClient();
   const userId = await getUserId();
   if (!userId) return;
-  // Alle deaktivieren, dann den einen aktivieren
-  await supabase.from('ai_configs').update({ is_active: false }).eq('user_id', userId).in('id', allIds);
+  // Alle deaktivieren, dann den gewählten aktivieren
+  await supabase.from('ai_configs').update({ is_active: false }).eq('user_id', userId);
   await supabase.from('ai_configs').update({ is_active: true }).eq('id', activeId).eq('user_id', userId);
 }
 
