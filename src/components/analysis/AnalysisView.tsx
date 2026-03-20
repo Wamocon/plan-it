@@ -91,6 +91,13 @@ export function AnalysisView({ project }: { project: Project }) {
     ['Onboarding', getVal('onboardingTime')],
   ];
 
+  const securityRows: [string, string][] = [
+    ['Sicherheitsmaßnahmen', getVal('security')],
+    ['Authentifizierung', getVal('authStrategy')],
+    ['API-Strategie', getVal('apiStrategy')],
+    ['Code Review', getVal('reviewProcess')],
+  ].filter(([, v]) => v && v !== '–') as [string, string][];
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-5">
       {/* Back */}
@@ -201,13 +208,28 @@ export function AnalysisView({ project }: { project: Project }) {
 
       {/* Tab: Ist */}
       {tab === 'ist' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {istRows.map(([k, v]) => (
-            <div key={k} className="bg-[#16161a] p-2.5 rounded-md border border-white/[0.07]">
-              <div className="text-[10px] text-white/30 font-bold uppercase tracking-wider">{k}</div>
-              <div className="text-sm text-white mt-0.5">{v}</div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {istRows.map(([k, v]) => (
+              <div key={k} className="bg-[#16161a] p-2.5 rounded-md border border-white/[0.07]">
+                <div className="text-[10px] text-white/30 font-bold uppercase tracking-wider">{k}</div>
+                <div className="text-sm text-white mt-0.5">{v}</div>
+              </div>
+            ))}
+          </div>
+          {securityRows.length > 0 && (
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-white/25 px-0.5 mb-1.5">🔐 Sicherheit & API</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {securityRows.map(([k, v]) => (
+                  <div key={k} className="bg-[#16161a] p-2.5 rounded-md border border-purple-500/[0.15]">
+                    <div className="text-[10px] text-purple-400/60 font-bold uppercase tracking-wider">{k}</div>
+                    <div className="text-sm text-white mt-0.5">{v}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          )}
         </div>
       )}
 

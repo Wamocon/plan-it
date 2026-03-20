@@ -25,5 +25,38 @@ export const wizardSteps: WizardStep[] = [
     {key:'documentation',label:'Dokumentation (Mehrfachauswahl)',type:'multi',options:[['none','Fehlt'],['outdated','Veraltet'],['readme','READMEs'],['adr','ADRs'],['storybook','Storybook'],['wiki','Wiki / Confluence']]},
     {key:'branching',label:'Branching',type:'select',allowCustom:true,customKey:'branchingC',options:[['none','Keine'],['basic','main/develop'],['gitflow','Git Flow'],['trunk','Trunk-Based'],['_c','Andere...']]},
     {key:'onboardingTime',label:'Onboarding-Dauer',type:'select',allowCustom:true,customKey:'onboardingTimeC',options:[['days','1–3 Tage'],['week','1 Woche'],['weeks','2–4 Wochen'],['month','> 1 Monat'],['_c','Andere...']]}
+  ]},
+  { id:'security',title:'Sicherheit & API',icon:'🔐',fields:[
+    {key:'security',label:'Sicherheitsmaßnahmen (Mehrfachauswahl)',type:'multi',options:[
+      ['none','Keine Maßnahmen'],
+      ['dependency-scan','Dependency Scanning (Dependabot / Snyk)'],
+      ['sast','SAST / Code-Analyse (SonarQube / CodeQL)'],
+      ['secrets','Secrets Management (Vault / Doppler)'],
+      ['code-review','Code Reviews (PR-Pflicht)'],
+      ['pentest','Penetration Testing']
+    ]},
+    {key:'authStrategy',label:'Authentifizierung / Identity',type:'select',options:[
+      ['none','Keine / Nicht relevant'],
+      ['selfbuilt','Selbst gebaut (Custom Login)'],
+      ['jwt','JWT (selbst implementiert)'],
+      ['oauth','OAuth 2.0 / OIDC (Google, GitHub…)'],
+      ['saml','SAML / Enterprise SSO'],
+      ['managed','Managed: Auth0 / Cognito / Keycloak']
+    ]},
+    {key:'apiStrategy',label:'API-Strategie (Mehrfachauswahl)',type:'multi',options:[
+      ['none','Keine API / Nicht relevant'],
+      ['rest','REST'],
+      ['graphql','GraphQL'],
+      ['grpc','gRPC'],
+      ['websocket','WebSocket / Realtime'],
+      ['openapi','OpenAPI / Swagger Spec'],
+      ['versioning','API Versionierung (v1, v2…)']
+    ]},
+    {key:'reviewProcess',label:'Code Review Prozess',type:'select',options:[
+      ['none','Kein Review-Prozess'],
+      ['informal','Informell / nach Bedarf'],
+      ['pr-review','Pull Request Reviews (verpflichtend)'],
+      ['formal','Formale Reviews + Architecture Board']
+    ]}
   ]}
 ];

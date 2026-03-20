@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
 import { useTheme } from '@/components/ui/ThemeProvider';
-import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList, ShieldCheck, Sun, Moon, BookOpen } from 'lucide-react';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -19,6 +19,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     { href: '/wizard', icon: PlusCircle, label: 'Neues Projekt', exact: true },
     { href: '/tasks', icon: ClipboardList, label: 'Aufgabensteuerung', exact: true },
     { href: '/compare', icon: GitCompare, label: 'Vergleich', exact: true },
+    { href: '/rules', icon: BookOpen, label: 'Regelwerk', exact: true },
   ];
 
   const recent = [...projects].reverse().slice(0, 5);

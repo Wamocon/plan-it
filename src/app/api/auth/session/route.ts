@@ -4,13 +4,15 @@ import { createServerClient } from '@supabase/ssr';
 
 // Collects cookies that Supabase wants to write, then applies them to the response.
 function makeClient(req: NextRequest, res: NextResponse) {
+  const schema = process.env.NEXT_PUBLIC_DB_SCHEMA ?? 'public';
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      db: { schema },
       cookies: {
         getAll() { return req.cookies.getAll(); },
-        setAll(c) { c.forEach(({ name, value, options }) => res.cookies.set(name, value, options as any)); },
+        setAll(c) { c.forEach(({ name, value, options }) => res.cookies.set(name, value, options as never)); },
       },
     }
   );
