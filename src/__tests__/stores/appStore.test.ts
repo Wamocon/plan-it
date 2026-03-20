@@ -569,22 +569,25 @@ describe('useAppStore', () => {
     it('addTask() erzeugt eine valide UUID als Task-ID', () => {
       const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
       useAppStore.getState().addTask(project.id, 1, 'Wave 1', 'Setup CI');
-      const task = useAppStore.getState().getProject(project.id)!.tasks[0];
-      expect(task.id).toMatch(UUID_REGEX);
+      const p = useAppStore.getState().getProject(project.id)!;
+      expect(p.tasks).toBeDefined();
+      expect(p.tasks![0]!.id).toMatch(UUID_REGEX);
     });
 
     it('addChatMessage() erzeugt eine valide UUID als Message-ID', () => {
       const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
       useAppStore.getState().addChatMessage(project.id, { role: 'user', content: 'Hallo' });
-      const msg = useAppStore.getState().getProject(project.id)!.chatHistory[0];
-      expect(msg.id).toMatch(UUID_REGEX);
+      const p = useAppStore.getState().getProject(project.id)!;
+      expect(p.chatHistory).toBeDefined();
+      expect(p.chatHistory![0]!.id).toMatch(UUID_REGEX);
     });
 
     it('takeSnapshot() erzeugt eine valide UUID als Snapshot-ID', () => {
       const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
       useAppStore.getState().takeSnapshot(project.id);
-      const snap = useAppStore.getState().getProject(project.id)!.snapshots[0];
-      expect(snap.id).toMatch(UUID_REGEX);
+      const p = useAppStore.getState().getProject(project.id)!;
+      expect(p.snapshots).toBeDefined();
+      expect(p.snapshots![0]!.id).toMatch(UUID_REGEX);
     });
 
     it('addJiraConfig() erzeugt eine valide UUID als Config-ID', () => {
