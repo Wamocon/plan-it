@@ -16,10 +16,12 @@ export async function middleware(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request });
 
+  const schema = process.env.NEXT_PUBLIC_DB_SCHEMA ?? 'public';
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      db: { schema },
       cookies: {
         getAll() { return request.cookies.getAll(); },
         setAll(cookiesToSet) {
@@ -42,15 +44,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // ── Profil-Prüfung: User muss im aktuellen Schema registriert sein ──
+  const { data: ownProfile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!ownProfile) {
+    // Kein Profil im aktuellen Schema → kein Zugriff
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/auth/login';
+    return NextResponse.redirect(loginUrl);
+  }
+
   // ── Admin-Routen: nur für Admins ──────────────────────────
   if (pathname.startsWith('/admin')) {
-    const { data: profileData } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profileData || profileData.role !== 'admin') {
+    if (ownProfile.role !== 'admin') {
       // Kein Admin → zur Startseite umleiten
       const homeUrl = request.nextUrl.clone();
       homeUrl.pathname = '/';

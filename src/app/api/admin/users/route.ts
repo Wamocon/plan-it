@@ -6,10 +6,12 @@ import type { UserRole } from '@/types';
 const VALID_ROLES: UserRole[] = ['admin', 'it-architect', 'developer', 'user'];
 
 function makeSupabase(req: NextRequest, res: NextResponse) {
+  const schema = process.env.NEXT_PUBLIC_DB_SCHEMA ?? 'public';
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      db: { schema },
       cookies: {
         getAll() { return req.cookies.getAll(); },
         setAll(c) { c.forEach(({ name, value, options }) => res.cookies.set(name, value, options as Record<string, unknown>)); },

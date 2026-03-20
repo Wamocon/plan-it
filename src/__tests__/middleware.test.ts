@@ -96,8 +96,17 @@ describe('middleware – Authentifizierungs-Guard', () => {
 
   it('lässt eingeloggten User durch', async () => {
     mockUser = { id: 'user-123' };
+    mockProfileRow = { role: 'user' };
     const res = await middleware(makeRequest('/') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
+  });
+
+  it('leitet eingeloggten User ohne Schema-Profil auf /auth/login um', async () => {
+    mockUser = { id: 'user-123' };
+    mockProfileRow = null;
+    const res = await middleware(makeRequest('/') as never);
+    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
+    expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
 
   it('lässt /auth/login durch ohne Redirect wenn nicht eingeloggt', async () => {
@@ -122,14 +131,27 @@ describe('middleware – Authentifizierungs-Guard', () => {
 
   it('lässt eingeloggten User auf /settings durch', async () => {
     mockUser = { id: 'user-123' };
+    mockProfileRow = { role: 'user' };
     const res = await middleware(makeRequest('/settings') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt eingeloggten User auf /wizard durch', async () => {
     mockUser = { id: 'user-123' };
+    mockProfileRow = { role: 'user' };
     const res = await middleware(makeRequest('/wizard') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
+  });
+
+  it('übergibt NEXT_PUBLIC_DB_SCHEMA an createServerClient', async () => {
+    process.env.NEXT_PUBLIC_DB_SCHEMA = 'test';
+    mockUser = { id: 'user-123' };
+    mockProfileRow = { role: 'user' };
+    const { createServerClient } = await import('@supabase/ssr');
+    await middleware(makeRequest('/') as never);
+    const callArgs = (createServerClient as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(callArgs[2]).toMatchObject({ db: { schema: 'test' } });
+    delete process.env.NEXT_PUBLIC_DB_SCHEMA;
   });
 });
 
@@ -166,12 +188,12 @@ describe('middleware – Admin-Routen-Guard', () => {
     expect((res as unknown as Record<string, unknown>).destination).toBe('/');
   });
 
-  it('leitet User ohne Profil-Eintrag von /admin/* auf / um', async () => {
+  it('leitet User ohne Schema-Profil von /admin/* auf /auth/login um', async () => {
     mockUser = { id: 'user-123' };
     mockProfileRow = null;
     const res = await middleware(makeRequest('/admin/users') as never);
     expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
-    expect((res as unknown as Record<string, unknown>).destination).toBe('/');
+    expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
   });
 
   it('lässt Admin auf /admin/users durch', async () => {

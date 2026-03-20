@@ -1,5 +1,280 @@
 import { WizardData, Risk, SollItem, Wave, AnalysisResult } from '@/types';
 
+// ══════════════════════════════
+// RULES CATALOG (exportiert für die Regelwerk-Anzeige)
+// ══════════════════════════════
+export interface RuleCatalogEntry {
+  id: string;
+  category: string;
+  title: string;
+  triggerDescription: string;
+  severity: 'high' | 'medium' | 'low' | 'variable';
+  scoreImpact: string;
+  contextSensitive: boolean;
+  recommendation: string;
+}
+
+export const RULES_CATALOG: RuleCatalogEntry[] = [
+  // ── Testing & Qualität ──
+  { id: 'testing-missing', category: 'Testing & Qualität', title: 'Fehlendes / Minimales Testing',
+    triggerDescription: 'Wenn kein oder minimales Testing (none/minimal) angegeben ist.',
+    severity: 'variable', scoreImpact: '+15 Pkt. für "comprehensive" · +10 für unit/integration/e2e · +3 für "minimal"',
+    contextSensitive: true,
+    recommendation: 'Einheitliches Testing-Framework mit Coverage-Gate in CI/CD einführen. Bei Monorepos: Shared Testing Utilities nutzen.' },
+  { id: 'mongodb-no-testing', category: 'Testing & Qualität', title: 'MongoDB ohne Schema-Tests (Schema-Drift-Risiko)',
+    triggerDescription: 'MongoDB als Datenbank UND kein oder minimales Testing.',
+    severity: 'high', scoreImpact: 'Kein zusätzlicher Score-Einfluss (s. Testing-Regel)',
+    contextSensitive: false,
+    recommendation: 'MongoDB hat keine Schemavalidierung – Datenmutationen durch Bugs bleiben ohne Tests unbemerkt. Mongoose-Schemas + umfangreiche Integrationstests einführen.' },
+
+  // ── CI/CD & Deployment ──
+  { id: 'cicd-missing', category: 'CI/CD & Deployment', title: 'Inkonsistente oder fehlende CI/CD',
+    triggerDescription: 'CI/CD ist "inconsistent", "none" oder nicht gesetzt.',
+    severity: 'variable', scoreImpact: '+15 Pkt. für "standardized" · +8 für GitHub Actions / GitLab CI / Jenkins · +5 für andere Werte',
+    contextSensitive: true,
+    recommendation: 'Reusable Workflow-Templates erstellen, die von allen Apps genutzt werden. Quality Gates (Tests, Linting, Security-Scan) in jede Pipeline integrieren.' },
+
+  // ── Monitoring & Observability ──
+  { id: 'monitoring-missing', category: 'Monitoring & Observability', title: 'Kein Monitoring / Error Tracking',
+    triggerDescription: 'Monitoring ist "none" oder nicht gesetzt.',
+    severity: 'high', scoreImpact: '+10 Pkt. für Sentry/Dashboard + Uptime/Logging · +7 für Sentry oder Dashboard · +4 für Uptime/Analytics/Logging',
+    contextSensitive: true,
+    recommendation: 'Empfehlung (skalierend): Sentry (Error Tracking) + Uptime-Monitoring + zentrales Dashboard. Bei Enterprise: APM, Distributed Tracing, Centralized Logging, SLOs/SLIs.' },
+  { id: 'monitoring-no-analytics', category: 'Monitoring & Observability', title: 'Keine Business-Analytics / Web Analytics',
+    triggerDescription: 'Weder Web-Analytics noch Dashboard aktiv UND Ziel-Apps ≥ 20.',
+    severity: 'low', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Plausible Analytics, Posthog oder Google Analytics 4 integrieren, um Nutzerverhalten und Business-Kennzahlen messbar zu machen.' },
+
+  // ── Architektur & Code-Sharing ──
+  { id: 'codesharing-missing', category: 'Architektur & Code-Sharing', title: 'Kein Code-Sharing / Copy-Paste',
+    triggerDescription: 'Code-Sharing ist "none", "copypaste" oder nicht gesetzt.',
+    severity: 'high', scoreImpact: '+15 Pkt. für Monorepo · +10 für Shared Library · +3 für Git Submodules',
+    contextSensitive: true,
+    recommendation: 'Shared Monorepo (Turborepo/Nx) einführen. Jede App profitiert sofort von Bugfixes in Shared Packages. Private npm Registry (GitHub Packages) für versionierte Releases.' },
+  { id: 'git-submodules', category: 'Architektur & Code-Sharing', title: 'Git Submodules: Fehleranfälliges Code-Sharing',
+    triggerDescription: 'Git Submodules als Code-Sharing-Methode ausgewählt.',
+    severity: 'medium', scoreImpact: 'Nur +3 Pkt. (gegenüber +10 für SharedLib oder +15 für Monorepo)',
+    contextSensitive: false,
+    recommendation: 'Migration zu Monorepo (Turborepo/Nx) oder Private npm Registry. Deutlich stabiler, entwicklerfreundlicher und frei von Synchronisationsproblemen.' },
+  { id: 'design-system-missing', category: 'Architektur & Code-Sharing', title: 'Kein Design System',
+    triggerDescription: 'Design System ist "none".',
+    severity: 'variable', scoreImpact: '+10 Pkt. für "full" · +5 Pkt. für "partial" · 0 Pkt. für "none"',
+    contextSensitive: true,
+    recommendation: 'Shared UI-Library mit Design Tokens auf Basis eines Komponentenframeworks (z.B. shadcn/ui) einführen. Storybook für lebendige Komponentendokumentation.' },
+  { id: 'tech-fragmentation', category: 'Architektur & Code-Sharing', title: 'Hohe Technologie-Fragmentierung',
+    triggerDescription: '≥ 3 verschiedene Tech Stacks ODER ≥ 3 verschiedene Datenbank-Technologien.',
+    severity: 'variable', scoreImpact: 'Kein direkter Score-Einfluss (erhöhte kognitive Last & Wartungsaufwand)',
+    contextSensitive: true,
+    recommendation: 'Technology Radar einführen (Adopt / Trial / Assess / Hold). Neue Apps nur mit dem Standard-Stack starten. Langfristige Konsolidierung planen.' },
+  { id: 'mixed-db-strategy', category: 'Architektur & Code-Sharing', title: 'Gemischte Datenbank-Strategie (relational + nicht-relational)',
+    triggerDescription: 'Sowohl relationale (PostgreSQL, MySQL, MariaDB, SQLite) als auch nicht-relationale Datenbanken (MongoDB, Firebase) gleichzeitig im Einsatz.',
+    severity: 'medium', scoreImpact: 'Kein direkter Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'ADR schreiben, das begründet, warum beide Datenbanktypen benötigt werden. Abstraktionsschicht (Repository Pattern) zwischen Anwendung und Datenbanktyp einführen.' },
+
+  // ── Dokumentation ──
+  { id: 'documentation-missing', category: 'Dokumentation', title: 'Fehlende Dokumentation',
+    triggerDescription: 'Dokumentation ist "none", "outdated" oder nicht gesetzt.',
+    severity: 'variable', scoreImpact: '+10 Pkt. für ADR + Wiki/Storybook · +7 Pkt. für ADR allein · +3 Pkt. für README',
+    contextSensitive: true,
+    recommendation: 'Living Documentation: Architecture Decision Records (ADRs) für alle Architekturentscheidungen, README pro App, Runbooks für Operations, Storybook für UI-Komponenten.' },
+
+  // ── Infrastruktur & Hosting ──
+  { id: 'hosting-fragmentation', category: 'Infrastruktur & Hosting', title: 'Fragmentierte Hosting-Landschaft',
+    triggerDescription: '≥ 3 verschiedene Hosting-Plattformen aktiv.',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'Langfristig konsolidieren. Infrastructure-as-Code (Terraform/Pulumi) für alle Umgebungen einführen. FinOps für Kostenoptimierung.' },
+  { id: 'strato-hosting', category: 'Infrastruktur & Hosting', title: 'Strato Shared Hosting: Skalierbarkeits-Limit',
+    triggerDescription: 'Strato als Hosting ausgewählt UND Team größer als "small".',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Migration zu modernem Hosting einplanen: Hetzner VPS + Docker, Vercel (für Node.js/Next.js) oder AWS/Azure. Hetzner ist kostengünstig und erlaubt vollständige Container-Setups.' },
+  { id: 'selfhosted-no-docker', category: 'Infrastruktur & Hosting', title: 'Self-Hosting ohne Containerisierung',
+    triggerDescription: 'Self-hosted als Hosting + kein Docker + Ziel-Apps ≥ 10.',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Docker + Docker Compose einführen. GitHub Actions → Docker Build → SSH-Deploy für automatisierte Deployments. Langfristig: k3s (leichtgewichtiges Kubernetes) evaluieren.' },
+  { id: 'no-caching-at-scale', category: 'Infrastruktur & Hosting', title: 'Kein Caching (Redis) bei Cloud-Skalierung',
+    triggerDescription: 'Redis nicht in der Datenbank-Auswahl + Cloud-Hosting (AWS, Azure oder GCP) + Ziel-Apps ≥ 20.',
+    severity: 'low', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'Redis als Caching-Layer für Session-Management, API-Response-Caching und häufige Datenbankabfragen einführen. Reduziert Cloud-Kosten und verbessert Antwortzeiten deutlich.' },
+  { id: 'no-iac-cloud', category: 'Infrastruktur & Hosting', title: 'Cloud-Hosting ohne Infrastructure-as-Code',
+    triggerDescription: 'AWS, Azure oder GCP als Hosting + kein standardisiertes CI/CD + Skalierung "large" oder "enterprise".',
+    severity: 'medium', scoreImpact: 'Kein direkter Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'Terraform oder Pulumi für alle Cloud-Ressourcen einführen. IaC ermöglicht reproduzierbare Umgebungen, Disaster Recovery und Audit-Trails für Infrastrukturänderungen.' },
+  { id: 'container-enterprise', category: 'Infrastruktur & Hosting', title: 'Keine Container-Strategie (Enterprise)',
+    triggerDescription: 'Self-hosted oder Docker NICHT im Hosting + Skalierung "enterprise".',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Container-Strategie definieren: Docker für alle Workloads, orchestriert mit Kubernetes (EKS/AKS/GKE) oder k3s. Standardisierte Base-Images im internen Registry.' },
+
+  // ── Technologie & Stack ──
+  { id: 'java-dotnet-vercel', category: 'Technologie & Stack', title: 'Java/.NET inkompatibel mit Vercel',
+    triggerDescription: 'Java oder .NET im Tech Stack + Vercel als Hosting.',
+    severity: 'high', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Vercel ist für Serverless Node.js/Next.js optimiert. Für Java/.NET bitte Railway, Render, AWS ECS oder Azure App Service verwenden. Vercel nur für reine Frontend-Apps behalten.' },
+  { id: 'laravel-vercel', category: 'Technologie & Stack', title: 'Laravel auf Vercel: Stark eingeschränkt',
+    triggerDescription: 'Laravel im Tech Stack + Vercel als Hosting.',
+    severity: 'high', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'PHP/Laravel auf Vercel unterstützt keine Sessions, Queues, DB-Verbindungen oder Cron Jobs zuverlässig. Laravel auf Hetzner VPS (Docker), DigitalOcean, Ploi oder AWS EC2 deployen.' },
+  { id: 'sqlite-multi-app', category: 'Technologie & Stack', title: 'SQLite ungeeignet für Multi-App-Skalierung',
+    triggerDescription: 'SQLite als Datenbank + Ziel-Apps ≥ 20.',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'SQLite ist dateibasiert und unterstützt keinen parallelen Zugriff aus mehreren Prozessen. Migration auf PostgreSQL oder MySQL planen. Supabase bietet kostenlosen PostgreSQL-Service.' },
+  { id: 'firebase-vendor-lock', category: 'Technologie & Stack', title: 'Firebase Vendor Lock-in bei hoher Skalierung',
+    triggerDescription: 'Firebase als Datenbank + Ziel-Apps ≥ 50.',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Firebase-Kosten skalieren nicht-linear. Abstraktionsschicht einführen. Firebase-Kosten-Kalkulation durchführen und Alternative (Supabase, PostgreSQL-basiert) evaluieren.' },
+
+  // ── Team & Organisation ──
+  { id: 'legacy-systems', category: 'Team & Organisation', title: 'Legacy-Systeme ohne Sicherheitspatches',
+    triggerDescription: 'Legacy-Systeme als "Ja" markiert.',
+    severity: 'high', scoreImpact: '+10 Pkt. wenn kein Legacy vorhanden · 0 Pkt. wenn Legacy vorhanden',
+    contextSensitive: true,
+    recommendation: 'Strangler Fig Pattern für schrittweise Ablösung. Sofort: Netz-Isolation + WAF. Bei Enterprise: dediziertes Migrations-Team aufsetzen.' },
+  { id: 'branching-missing', category: 'Team & Organisation', title: 'Fehlende Branching-Strategie',
+    triggerDescription: 'Branching ist "none" oder "basic" UND Team ≥ 5 Entwickler.',
+    severity: 'variable', scoreImpact: '+10 Pkt. für Trunk-Based · +8 für Git Flow · +3 für basic · 0 für none',
+    contextSensitive: true,
+    recommendation: 'Git Flow oder Trunk-Based Development einführen. Branch-Schutzregeln auf main/develop aktivieren. Pull Request Reviews verpflichtend.' },
+  { id: 'onboarding-slow', category: 'Team & Organisation', title: 'Langsames Onboarding (≥ 2 Wochen)',
+    triggerDescription: 'Onboarding-Zeit ist "weeks" (2–4 Wochen) oder "month" (> 1 Monat).',
+    severity: 'variable', scoreImpact: '+5 Pkt. für "days"/"week" · +2 Pkt. für "weeks" · 0 für "month"',
+    contextSensitive: true,
+    recommendation: 'Standard-Architektur + CLI-Tool + Onboarding-Runbook. Dev Containers für sofort lauffähige Entwicklungsumgebungen. Ziel: neuer Entwickler produktiv in 1–2 Tagen.' },
+  { id: 'apps-per-dev-ratio', category: 'Team & Organisation', title: 'Ungünstiges Apps-zu-Entwickler-Verhältnis',
+    triggerDescription: '≥ 4 Apps pro Entwickler UND ≥ 8 Apps insgesamt.',
+    severity: 'variable', scoreImpact: 'Kein direkter Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'Team-Ownership-Modell einführen (kein Einzelpersonen-Ownership). Automatisierung maximal priorisieren. Neue Apps nur bei klar definierter Teamzuständigkeit starten.' },
+  { id: 'bus-factor', category: 'Team & Organisation', title: 'Bus-Faktor: Kritische Wissenskonzentration',
+    triggerDescription: '≤ 5 Entwickler + ≥ 5 Apps + keine Dokumentation.',
+    severity: 'high', scoreImpact: 'Kein direkter Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Sofort: Jede App bekommt README + Deployment-Runbook. Pair Programming für kritische Systeme einführen. Kein System darf nur einer Person bekannt sein.' },
+
+  // ── Security & Compliance ──
+  { id: 'auth-selfbuilt', category: 'Security & Compliance', title: 'Selbst gebaute Authentifizierung (OWASP A07)',
+    triggerDescription: 'authStrategy ist "selfbuilt" (Custom Login) oder "jwt" (JWT selbst implementiert).',
+    severity: 'high', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Migration zu Managed Auth Provider: Auth0 (kostenlos bis 7.500 User), Supabase Auth, NextAuth.js oder Keycloak (selbst hostbar). Kein Custom Auth für Produktionssysteme.' },
+  { id: 'sec-no-dependency-scan', category: 'Security & Compliance', title: 'Kein Dependency-Scanning: CVE-Blindflug',
+    triggerDescription: 'Kein Dependency Scanning in den Sicherheitsmaßnahmen + Team nicht "small" oder Ziel-Apps ≥ 20.',
+    severity: 'variable', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'GitHub Dependabot kostenlos aktivieren. Snyk Free für erweiterte Analyse. Renovate für automatisierte Dependency-Updates. SLA für kritische CVEs definieren (Patch < 24h).' },
+  { id: 'sec-no-secrets', category: 'Security & Compliance', title: 'Kein Secrets Management: Credentials-Leck-Risiko',
+    triggerDescription: 'Kein Secrets Management konfiguriert + Cloud-Hosting (AWS, Azure oder GCP) aktiv.',
+    severity: 'high', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'Sofort: git-secrets installieren, .env aus .gitignore prüfen. Mittelfristig: AWS SSM Parameter Store (kostenlos), Azure Key Vault oder Doppler/Infisical als SaaS.' },
+  { id: 'sec-no-sast', category: 'Security & Compliance', title: 'Kein SAST / Statische Code-Analyse',
+    triggerDescription: 'Kein SAST konfiguriert + Ziel-Apps ≥ 20.',
+    severity: 'variable', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'GitHub Code Scanning (CodeQL) kostenlos für alle Repos aktivieren. SonarCloud als Alternative. Als Required Check in Branch Protection einbinden.' },
+  { id: 'sec-no-review', category: 'Security & Compliance', title: 'Kein Code Review Prozess',
+    triggerDescription: 'reviewProcess ist "none" UND Team ≥ 5 Entwickler.',
+    severity: 'variable', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'Branch Protection aktivieren: min. 1 Approval für alle Merges. Automatisierte CI-Checks als Required Status Checks. CODEOWNERS-Datei für sensible Bereiche.' },
+
+  // ── API-Strategie ──
+  { id: 'api-no-spec', category: 'API-Strategie', title: 'REST/GraphQL ohne API-Spezifikation',
+    triggerDescription: 'REST oder GraphQL als API-Strategie, aber kein OpenAPI/Swagger-Spec + Team ≥ 10 Entwickler.',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'API-First: OpenAPI 3.1 Spec als Single Source of Truth. swagger-jsdoc für automatische Generierung aus Code-Kommentaren. Stoplight oder Redocly für Dokumentations-Portal.' },
+  { id: 'api-no-versioning', category: 'API-Strategie', title: 'APIs ohne Versionierung: Breaking-Change-Falle',
+    triggerDescription: 'REST, GraphQL oder gRPC als API-Strategie + keine API-Versionierung + Ziel-Apps ≥ 20.',
+    severity: 'medium', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: false,
+    recommendation: 'URL-Versionierung (/api/v1/) sofort einführen. Deprecation-Header nutzen. Alte Versionen mind. 3 Monate parallel betreiben. GraphQL: Schema-Evolution (Field Deprecation) statt Hard-Versioning.' },
+  { id: 'api-no-definition', category: 'API-Strategie', title: 'Keine API-Strategie definiert',
+    triggerDescription: 'Kein API-Typ ausgewählt (REST, GraphQL, gRPC) bei ≥ 3 Apps.',
+    severity: 'low', scoreImpact: 'Kein Score-Einfluss',
+    contextSensitive: true,
+    recommendation: 'API-Strategie festlegen: REST für einfache CRUD-APIs, GraphQL für flexible Client-Anforderungen, gRPC für Service-zu-Service-Kommunikation mit hoher Performance. ADR erstellen.' },
+];
+
+export interface ScoreCriterion {
+  category: string;
+  criterion: string;
+  maxPoints: number;
+  breakdown: { value: string; points: number }[];
+}
+
+export const SCORE_CRITERIA: ScoreCriterion[] = [
+  { category: 'Testing', criterion: 'Testing-Abdeckung', maxPoints: 15,
+    breakdown: [
+      { value: 'Umfassend (comprehensive)', points: 15 },
+      { value: 'Unit, Integration oder E2E', points: 10 },
+      { value: 'Minimal', points: 3 },
+      { value: 'Keines', points: 0 },
+    ] },
+  { category: 'CI/CD', criterion: 'CI/CD-Reifegrad', maxPoints: 15,
+    breakdown: [
+      { value: 'Standardisiert (alle Apps gleich)', points: 15 },
+      { value: 'GitHub Actions / GitLab CI / Jenkins', points: 8 },
+      { value: 'Anderes CI/CD-System', points: 5 },
+      { value: 'Keine oder inkonsistent', points: 0 },
+    ] },
+  { category: 'Monitoring', criterion: 'Monitoring & Observability', maxPoints: 10,
+    breakdown: [
+      { value: 'Sentry/Dashboard + Uptime + Logging', points: 10 },
+      { value: 'Sentry oder Dashboard', points: 7 },
+      { value: 'Uptime, Analytics oder Logging', points: 4 },
+      { value: 'Keines', points: 0 },
+    ] },
+  { category: 'Dokumentation', criterion: 'Dokumentationsqualität', maxPoints: 10,
+    breakdown: [
+      { value: 'ADR + Wiki oder Storybook', points: 10 },
+      { value: 'ADR, Wiki oder Storybook (einzeln)', points: 7 },
+      { value: 'Nur READMEs', points: 3 },
+      { value: 'Keine oder veraltet', points: 0 },
+    ] },
+  { category: 'Code-Sharing', criterion: 'Code-Sharing-Strategie', maxPoints: 15,
+    breakdown: [
+      { value: 'Monorepo', points: 15 },
+      { value: 'Shared Library / npm Package', points: 10 },
+      { value: 'Git Submodules', points: 3 },
+      { value: 'Copy-Paste oder keines', points: 0 },
+    ] },
+  { category: 'Design System', criterion: 'Design System Vollständigkeit', maxPoints: 10,
+    breakdown: [
+      { value: 'Vollständig (full)', points: 10 },
+      { value: 'Teilweise (partial)', points: 5 },
+      { value: 'Keines', points: 0 },
+    ] },
+  { category: 'Branching', criterion: 'Branching-Strategie', maxPoints: 10,
+    breakdown: [
+      { value: 'Trunk-Based Development', points: 10 },
+      { value: 'Git Flow', points: 8 },
+      { value: 'Basic (main/develop)', points: 3 },
+      { value: 'Keine', points: 0 },
+    ] },
+  { category: 'Legacy', criterion: 'Legacy-Freiheit', maxPoints: 10,
+    breakdown: [
+      { value: 'Keine Legacy-Systeme', points: 10 },
+      { value: 'Legacy-Systeme vorhanden', points: 0 },
+    ] },
+  { category: 'Onboarding', criterion: 'Onboarding-Geschwindigkeit', maxPoints: 5,
+    breakdown: [
+      { value: '1–3 Tage oder 1 Woche', points: 5 },
+      { value: '2–4 Wochen', points: 2 },
+      { value: '> 1 Monat', points: 0 },
+    ] },
+];
+
 // ── Scale Detection ──
 type Scale = 'small' | 'medium' | 'large' | 'enterprise';
 
@@ -265,6 +540,159 @@ export function fallbackAnalysis(d: WizardData): AnalysisResult {
       recommendation: 'Sofort: Jede App bekommt README + Deployment-Runbook. Pair Programming für kritische Systeme einführen. Kein System darf nur einer Person bekannt sein.' });
   }
 
+  // ── NEUE REGELN ──
+
+  // MongoDB ohne Testing → Schema-Drift ist ein kritisches Risiko
+  const dbList = (d.database || '').split(',').filter(Boolean);
+  if (dbList.includes('mongodb') && (has(testing, 'none', 'minimal') || !hasAny(testing))) {
+    const mongoTestTool = primaryStackList.includes('laravel') ? 'PHPUnit + Pest'
+      : primaryStackList.includes('dotnet') ? 'xUnit / NUnit'
+      : primaryStackList.includes('java') ? 'JUnit 5 + Testcontainers'
+      : 'Vitest / Jest';
+    risks.push({ title: 'MongoDB ohne Schema-Tests: Stille Datenmutation', severity: 'high',
+      description: `MongoDB erzwingt kein Schema – ohne Tests können Bugs Datensätze in falschem Format schreiben oder Felder löschen, ohne dass der Fehler bemerkt wird. Bei ${appNum} Apps erhöht sich dieses Risiko exponentiell.`,
+      recommendation: `Mongoose-Schemas mit strikter Validierung einführen. ${mongoTestTool}-Integrationstests für alle DB-Operationen vorschreiben. Zod- oder Joi-Validierung an allen API-Grenzen.` });
+  }
+
+  // Keine Business-Analytics bei wachsender App-Landschaft
+  if (!has(mon, 'analytics', 'dashboard') && targetNum >= 20) {
+    risks.push({ title: 'Keine Business-Analytics: Blind Scale', severity: 'low',
+      description: `Bei ${targetNum}+ geplanten Apps ohne Web-Analytics oder Business-Dashboard ist kein datengetriebenes Wachstum möglich. Produktentscheidungen basieren auf Annahmen statt Nutzerdaten.`,
+      recommendation: scale === 'enterprise'
+        ? 'Zentrales Analytics-Stack: Posthog oder Amplitude für Produktanalytics, Grafana für technische KPIs. Einheitliche Event-Tracking-Library für alle Apps.'
+        : 'Plausible Analytics (DSGVO-konform, selbst hostbar) oder Posthog für alle Apps integrieren. Shared Analytics-Wrapper als Shared Package verteilen.' });
+  }
+
+  // Gemischte DB-Strategie (relational + nicht-relational)
+  const relationalDbs = ['postgres', 'mysql', 'mariadb', 'sqlite', 'supabase'];
+  const nonRelationalDbs = ['mongodb', 'firebase'];
+  const hasRelational = relationalDbs.some(db => dbList.includes(db));
+  const hasNonRelational = nonRelationalDbs.some(db => dbList.includes(db));
+  if (hasRelational && hasNonRelational && dbCount >= 2) {
+    risks.push({ title: 'Gemischte Datenbank-Strategie ohne klares Konzept', severity: 'medium',
+      description: `Gleichzeitiger Einsatz von relationalen (${relationalDbs.filter(db => dbList.includes(db)).join(', ')}) und nicht-relationalen Datenbanken (${nonRelationalDbs.filter(db => dbList.includes(db)).join(', ')}) erhöht die Betriebskomplexität. Zwei verschiedene Backup-, Monitoring- und Skalierungsstrategien werden nötig.`,
+      recommendation: `ADR erstellen: Für welchen Anwendungsfall wird welcher Datenbanktyp genutzt? Repository Pattern als Abstraktionsschicht einführen. ${scale === 'enterprise' ? 'Service-Ownership klären: welches Team ist für welche Datenbank verantwortlich?' : 'Mittelfristig prüfen, ob ein Typ ausreicht (PostgreSQL kann auch JSON/Document-Daten gut speichern).'}` });
+  }
+
+  // Kein Caching (Redis) bei Cloud-Hosting mit hoher Skalierung
+  if (!dbList.includes('redis') && (hostingList.includes('aws') || hostingList.includes('azure') || hostingList.includes('gcp')) && targetNum >= 20) {
+    risks.push({ title: 'Kein Caching (Redis) bei Cloud-Skalierung', severity: 'low',
+      description: `Bei ${targetNum}+ Apps auf Cloud-Infrastruktur ohne Caching-Layer treffen alle Requests direkt die Datenbank. Cloud-Datenbankkosten skalieren linear mit Last – ungecachte API-Responses können Cloud-Kosten vervielfachen.`,
+      recommendation: `Redis (managed: AWS ElastiCache, Azure Cache for Redis oder Upstash als serverlose Alternative) als Caching-Layer einführen. Typische Use Cases: Session-Management, API-Response-Caching (TTL 5–60s), Rate-Limiting, Job-Queues.` });
+  }
+
+  // Infrastructure-as-Code fehlt bei Cloud + großer Skalierung
+  const cloudHostings = ['aws', 'azure', 'gcp'];
+  const usesCloud = cloudHostings.some(h => hostingList.includes(h));
+  if (usesCloud && (scale === 'large' || scale === 'enterprise') && !has(ci, 'standardized')) {
+    risks.push({ title: 'Cloud-Infrastruktur ohne Infrastructure-as-Code', severity: 'medium',
+      description: `${cloudHostings.filter(h => hostingList.includes(h)).map(h => h.toUpperCase()).join('/')} ohne IaC bedeutet: manuelle Klick-Deployments, keine reproduzierbaren Umgebungen und kein Audit-Trail für Infrastrukturänderungen. Bei ${targetNum}+ Apps entsteht "Cloud-Chaos".`,
+      recommendation: scale === 'enterprise'
+        ? 'Terraform oder Pulumi für alle Cloud-Ressourcen (Pflicht). GitOps: Infrastrukturänderungen nur über Pull Requests. Kostenschätzung vor jedem Apply (terraform plan). Drift-Detection automatisieren.'
+        : 'Terraform-Starter-Setup für alle Cloud-Ressourcen. State in S3/Azure Blob speichern. Basis-Module für VPC, Datenbank, Container-Service.' });
+  }
+
+  // Keine Container-Strategie bei Enterprise
+  if ((scale === 'enterprise') && !hostingList.includes('docker') && !hostingList.includes('aws') && !hostingList.includes('azure') && !hostingList.includes('gcp')) {
+    risks.push({ title: 'Keine Container-Strategie (Enterprise-Risiko)', severity: 'medium',
+      description: `Enterprise-Projekte ohne Container-Strategie leiden unter: langsamen, manuellen Deployments, schwer reproduzierbaren Umgebungen und erschwertem horizontalen Skalieren. Bei ${targetNum}+ Apps ist das ein strukturelles Problem.`,
+      recommendation: 'Docker für alle Workloads einführen. Container-Orchestrierung evaluieren: Kubernetes (EKS/AKS/GKE) für Hochlast, k3s/k3d für leichtgewichtige Setups. Standardisierte Base-Images im internen Container-Registry.' });
+  }
+
+  // ── SICHERHEIT & AUTH ──
+  const sec = d.security || '';
+  const auth = d.authStrategy || '';
+  const apiStrat = d.apiStrategy || '';
+  const review = d.reviewProcess || '';
+
+  // Selbst gebaute Authentifizierung (OWASP A07)
+  if (auth === 'selfbuilt' || auth === 'jwt') {
+    const severity: Risk['severity'] = auth === 'selfbuilt' ? 'high' : 'medium';
+    risks.push({ title: auth === 'selfbuilt' ? 'Selbst gebautes Auth-System: Sicherheitslücken vorprogrammiert' : 'JWT selbst implementiert: Fehleranfällige Auth-Logik',
+      severity,
+      description: auth === 'selfbuilt'
+        ? `Selbst implementierte Authentifizierungssysteme sind eine der häufigsten Ursachen für Sicherheitsvorfälle (OWASP A07). Session-Management, Passwort-Hashing, Rate-Limiting, Token-Rotation – jede Komponente kann kritische Fehler enthalten. Bei ${appNum} Apps multipliziert sich die Angriffsfläche.`
+        : 'JWT-Implementierungen sind oft fehlerhaft: falsche Algorithmen ("none"-Angriff), fehlende Token-Rotation, zu lange Ablaufzeiten, unsichere Secrets. Custom JWT-Code wird selten umfassend auf Sicherheit geprüft.',
+      recommendation: scale === 'enterprise'
+        ? 'Sofort: Migration zu Enterprise Identity Provider (Keycloak on-prem, Azure AD B2C oder Okta). Zero-Trust Architektur implementieren. IAM-Audit aller bestehenden Tokens und Sessions durchführen.'
+        : 'Migration zu Managed Auth Provider: Auth0 (kostenlos bis 7.500 User), Supabase Auth, NextAuth.js oder Keycloak (selbst hostbar, kostenlos). Kein Custom Auth für Produktionssysteme.' });
+  }
+
+  // Kein Dependency-Scanning
+  if (!has(sec, 'dependency-scan') && (scale !== 'small' || targetNum >= 20)) {
+    const severity: Risk['severity'] = scale === 'enterprise' ? 'high' : 'medium';
+    risks.push({ title: 'Kein Dependency-Scanning: Unbekannte CVEs in Abhängigkeiten',
+      severity,
+      description: `Ohne automatisiertes Vulnerability-Scanning werden kritische CVEs (wie Log4Shell, Spring4Shell) erst Wochen nach Veröffentlichung entdeckt. Bei ${appNum} Apps und ${targetNum}+ geplanten Apps skaliert das Risiko proportional mit jeder neuen Abhängigkeit.`,
+      recommendation: scale === 'enterprise'
+        ? 'Snyk Enterprise oder GitHub Advanced Security aktivieren. SLA für kritische CVEs definieren (Patch < 24h). Renovate mit Auto-Merge für Patch-Updates konfigurieren. Security-Champions in jedem Team benennen.'
+        : 'GitHub Dependabot aktivieren (kostenlos, direkt in Repo-Settings). Snyk Free für erweiterte CVSS-Scores. Renovate für automatisierte PRs bei Dependency-Updates.' });
+  }
+
+  // Kein Secrets Management bei Cloud-Hosting
+  if (!has(sec, 'secrets') && usesCloud) {
+    risks.push({ title: 'Kein Secrets Management: Credentials-Leck-Risiko',
+      severity: 'high',
+      description: `Ohne dediziertes Secrets Management landen API-Keys, Datenbank-Passwörter und Zertifikate in .env-Dateien oder als Klartext in CI/CD-Variablen. Git-Histories sind dauerhaft – einmal commitete Secrets bleiben für immer. Auf ${cloudHostings.filter(h => hostingList.includes(h)).map(h => h.toUpperCase()).join('/')} ist das ein aktives Sicherheitsrisiko.`,
+      recommendation: scale === 'enterprise'
+        ? 'HashiCorp Vault (self-hosted) oder cloud-nativer Service (AWS Secrets Manager, Azure Key Vault). Rotation aller bestehenden Credentials. truffleHog oder git-secrets für Repository-Scan durchführen. Zero-Trust: jeder Service hat eigene Credentials.'
+        : 'Sofort: git-secrets installieren + .env in .gitignore prüfen. Mittelfristig: AWS SSM Parameter Store (kostenlos), Azure Key Vault oder Doppler/Infisical als günstige SaaS-Lösung.' });
+  }
+
+  // Kein SAST / Code-Analyse
+  if (!has(sec, 'sast') && targetNum >= 20) {
+    const severity: Risk['severity'] = scale === 'enterprise' ? 'high' : 'medium';
+    risks.push({ title: 'Kein SAST / Statische Code-Analyse',
+      severity,
+      description: `Ohne statische Code-Analyse werden Sicherheitslücken wie SQL-Injection, XSS, unsichere Deserialisierung oder hardcodierte Secrets erst in der Produktion entdeckt. Bei ${targetNum}+ Apps steigt die Angriffsfläche proportional zur Codebasis – ohne SAST ist Security Debt nicht messbar.`,
+      recommendation: scale === 'enterprise'
+        ? 'SonarQube (self-hosted) oder GitHub Code Scanning (CodeQL) als verpflichtender PR-Check. Security-Findings als Deployment Blocker (High/Critical). Regelmäßige Penetration Tests (halbjährlich). OWASP SAMM als Reifegradmodell.'
+        : 'GitHub Code Scanning (CodeQL) ist kostenlos und direkt im Repo aktivierbar. SonarCloud als Alternative (kostenlos für Open Source). Als Required Status Check in Branch Protection einbinden.' });
+  }
+
+  // Kein Code Review Prozess
+  if ((review === 'none' || !review) && teamNum >= 5) {
+    const severity: Risk['severity'] = teamNum >= 15 ? 'high' : 'medium';
+    risks.push({ title: 'Kein Code Review Prozess: Kein Vier-Augen-Prinzip',
+      severity,
+      description: `Bei ${teamNum} Entwicklern ohne verpflichtende Code Reviews gibt es kein Vier-Augen-Prinzip. Bugs, Security-Lücken und Architektur-Abweichungen werden nicht erkannt. Wissensilos entstehen, da Code nur von einer Person verstanden wird. Insbesondere bei Security-kritischem Code ist das ein hohes Risiko.`,
+      recommendation: scale === 'enterprise'
+        ? 'Branch-Schutzregeln: min. 2 Approvals + 1 Architecture Review für kritische Services. CODEOWNERS-Datei für sensible Verzeichnisse (auth/, infra/, db/). Automatisierte Checks (Linting, Tests, SAST) als Required Status Checks.'
+        : teamNum >= 10
+        ? 'GitHub/GitLab Branch Protection: min. 1 Approval für alle Merges. Automatisierte CI-Checks als Required. Klare PR-Richtlinien (Beschreibung, Tests, Dokumentation). Review-Rotation einführen.'
+        : 'Branch Protection aktivieren: min. 1 Approval. Automatisierte Tests als Required Check. Kurze PR-Checkliste einführen.' });
+  }
+
+  // REST/GraphQL ohne OpenAPI-Spezifikation
+  if (has(apiStrat, 'rest', 'graphql') && !has(apiStrat, 'openapi') && teamNum >= 10) {
+    risks.push({ title: 'APIs ohne Spezifikation: Implicit Contracts',
+      severity: 'medium',
+      description: `REST/GraphQL-APIs ohne OpenAPI-Spec / SDL bedeuten implizite Verträge zwischen Teams. Kein automatisch generierter Client-Code, keine Typsicherheit zwischen Services, schwieriges Onboarding. Ab ${teamNum} Entwicklern häufen sich Missverständnisse über API-Contracts, was zu Regressions und Integrationsproblemen führt.`,
+      recommendation: scale === 'enterprise'
+        ? 'API-First Development: OpenAPI 3.1 Spec als Single Source of Truth (verpflichtend). Contract Testing mit Pact. API-Gateway (Kong, AWS API GW) mit automatischer Dokumentation. Versionierte SDK-Generierung (openapi-generator).'
+        : 'swagger-jsdoc oder tsoa für automatische Spec-Generierung aus Code. Swagger UI oder Redocly für Dokumentationsportal. Spec als Required Teil jedes Feature-PRs.' });
+  }
+
+  // API ohne Versionierung
+  if (has(apiStrat, 'rest', 'graphql', 'grpc') && !has(apiStrat, 'versioning') && targetNum >= 20) {
+    risks.push({ title: 'APIs ohne Versionierung: Breaking-Change-Falle',
+      severity: 'medium',
+      description: `Bei ${targetNum}+ geplanten Apps und nicht versionierten APIs erzwingt jede Breaking Change eine simultane Aktualisierung aller Consumer. Das führt zu "API Freeze" – Teams trauen sich nicht mehr, APIs zu verbessern, da die Koordination zu aufwändig ist.`,
+      recommendation: scale === 'enterprise'
+        ? 'Semantic Versioning für alle APIs (/v1/, /v2/). Deprecation Policy (min. 6 Monate Notice). API-Gateway mit Version-Routing und Auslauf-Tracking. GraphQL: Schema-Evolution (Field Deprecation) statt Hard Versioning.'
+        : 'URL-Versionierung (/api/v1/) sofort einführen. Deprecation-Header (Sunset, Deprecation) nutzen. Alte Versionen mind. 3 Monate parallel betreiben. Changelog für API-Änderungen führen.' });
+  }
+
+  // Keine API-Strategie definiert bei mehreren Apps
+  if ((!hasAny(apiStrat) || has(apiStrat, 'none')) && appNum >= 3) {
+    risks.push({ title: 'Keine API-Strategie: Wilde Integration',
+      severity: 'low',
+      description: `Bei ${appNum} Apps ohne definierte API-Strategie entstehen unterschiedliche Integrationsmuster in jeder App. REST hier, proprietäres RPC dort – das erschwert spätere Konsolidierung und Cross-App-Features massiv.`,
+      recommendation: scale === 'enterprise'
+        ? 'API-Strategie als ADR dokumentieren. API-Gateway für einheitlichen Einstiegspunkt. Event-Driven Architecture (Kafka/RabbitMQ) für asynchrone Kommunikation evaluieren.'
+        : 'API-Strategie festlegen: REST für CRUD-APIs, GraphQL für flexible Frontend-Anforderungen. Einheitliche Response-Formate und Fehlerstruktur als Shared Package definieren.' });
+  }
+
   // ── SOLL (scaled) ──
   soll.push({ area: 'Tech Stack', target: scale === 'enterprise'
     ? 'Technology Radar mit klaren Adopt/Hold Kategorien. Golden Path für neue Apps.'
@@ -324,6 +752,40 @@ export function fallbackAnalysis(d: WizardData): AnalysisResult {
       : 'Git Flow oder Trunk-Based Development, Branch-Schutzregeln auf main' });
   }
 
+  // Security & Auth SOLL-Items
+  if (auth === 'selfbuilt' || auth === 'jwt') {
+    soll.push({ area: 'Authentifizierung', target: scale === 'enterprise'
+      ? 'Enterprise Identity Provider (Keycloak, Azure AD B2C oder Okta). Zero-Trust Architektur. IAM-Audit aller Sessions.'
+      : 'Managed Auth: Auth0, Supabase Auth oder NextAuth.js. Kein Custom-Auth in Production.' });
+  }
+  if (!has(sec, 'dependency-scan') || !has(sec, 'sast')) {
+    soll.push({ area: 'Security Automation', target: scale === 'enterprise'
+      ? 'GitHub Advanced Security / Snyk Enterprise. SLA für CVE-Patches. Dependency-Updates automatisiert (Renovate). Security-Champion in jedem Team.'
+      : 'GitHub Dependabot + Code Scanning (CodeQL) in CI/CD aktivieren. Automatische Security-PRs für Patch-Updates.' });
+  }
+  if (!has(sec, 'secrets') && usesCloud) {
+    soll.push({ area: 'Secrets Management', target: scale === 'enterprise'
+      ? 'HashiCorp Vault + automatische Secret Rotation. Keine Credentials in Repositories oder CI/CD-Variablen.'
+      : 'Cloud Secrets Manager (AWS SSM / Azure Key Vault) oder Doppler. git-secrets im Repository aktivieren.' });
+  }
+  if ((review === 'none' || !review) && teamNum >= 5) {
+    soll.push({ area: 'Code Review', target: scale === 'enterprise'
+      ? 'Branch Protection: min. 2 Approvals. CODEOWNERS für sensible Bereiche. Architecture Reviews für alle größeren Änderungen.'
+      : 'Branch Protection: min. 1 Approval verpflichtend. Automatisierte Tests als Required Status Check.' });
+  }
+
+  // API SOLL-Items
+  if (has(apiStrat, 'rest', 'graphql') && !has(apiStrat, 'openapi')) {
+    soll.push({ area: 'API-Dokumentation', target: scale === 'enterprise'
+      ? 'API-First: OpenAPI 3.1 Spec als Pflicht. API-Gateway mit automatischer Dokumentation. Versionierte Client-SDKs generieren.'
+      : 'OpenAPI/Swagger Spec für alle REST-APIs. swagger-jsdoc für automatische Generierung. Redocly für Dokumentationsportal.' });
+  }
+  if (has(apiStrat, 'rest', 'graphql', 'grpc') && !has(apiStrat, 'versioning') && targetNum >= 20) {
+    soll.push({ area: 'API-Versionierung', target: scale === 'enterprise'
+      ? 'Semantische API-Versionierung (/v1/, /v2/). Deprecation Policy (6 Monate). API-Gateway mit Version-Routing.'
+      : 'URL-Versionierung (/api/v1/) einführen. Deprecation-Header. Changelog für Breaking Changes.' });
+  }
+
   // CI/CD + Hosting spezifische Soll-Empfehlungen (Idee 4)
   if (hostingList.includes('vercel') && !has(ci, 'standardized')) {
     soll.push({ area: 'Deployment (Vercel)', target: 'Vercel Git Integration: automatische Preview Deployments für PRs, Production Deploy auf main. Vercel CLI in CI/CD Pipeline.' });
@@ -360,8 +822,10 @@ export function fallbackAnalysis(d: WizardData): AnalysisResult {
       items: ['Platform Team definieren und Verantwortlichkeiten klären', 'Technology Radar erstellen (Adopt/Trial/Assess/Hold)', `Shared Monorepo mit ${monorepoTool} aufsetzen`, `${registryTool} + automatisierte Dependency-Updates (Renovate)`, 'Reusable CI/CD Pipelines mit Quality Gates', 'Architecture Decision Records einführen (verpflichtend)'] });
     waves.push({ number: 2, title: 'Design System & Developer Experience', duration: '3–6 Wochen',
       items: ['Design System Team aufbauen', 'Komponentenbibliothek mit Storybook', 'Design Tokens + Figma-Sync', 'Shared Utilities & Types Packages', 'Internal Developer Portal (Backstage) evaluieren', 'Pilot-Migration von 2–3 Apps'] });
-    waves.push({ number: 3, title: 'Testing, Monitoring & Observability', duration: '4–6 Wochen',
-      items: [`Test-Strategie: ${testingTool} (Unit/Integration/E2E-Pyramide)`, 'Shared Testing Library + Contract Testing', 'Observability Stack: APM + Distributed Tracing + Centralized Logging', 'SLOs/SLIs für kritische Services definieren', 'Alerting mit Eskalationsstufen', 'Incident Response Prozess etablieren'] });
+    const w3ItemsEnterprise = [`Test-Strategie: ${testingTool} (Unit/Integration/E2E-Pyramide)`, 'Shared Testing Library + Contract Testing', 'Observability Stack: APM + Distributed Tracing + Centralized Logging', 'SLOs/SLIs für kritische Services definieren', 'Alerting mit Eskalationsstufen', 'Incident Response Prozess etablieren'];
+    if (auth === 'selfbuilt' || auth === 'jwt' || !has(sec, 'dependency-scan') || !has(sec, 'sast')) w3ItemsEnterprise.push('Security: Dependency Scanning + SAST einrichten, Auth-Provider migrieren');
+    if (!has(sec, 'secrets') && usesCloud) w3ItemsEnterprise.push('Secrets Management: HashiCorp Vault oder Cloud Secrets Manager einführen');
+    waves.push({ number: 3, title: 'Testing, Monitoring, Security & Observability', duration: '4–6 Wochen', items: w3ItemsEnterprise });
     waves.push({ number: 4, title: 'Self-Service & Migration', duration: '4–8 Wochen',
       items: ['Self-Service Portal für neue Apps (Golden Path)', `Migration der ${appNum} bestehenden Apps (priorisiert nach Risiko)`, 'Standardisierte Dev Environments (Dev Containers/Gitpod)', 'Onboarding-Programm mit Buddy-System', 'Compliance-Dashboard für Architektur-Konformität'] });
     const w5 = ['FinOps: Cloud-Kosten optimieren', 'Architecture Review Board etablieren', 'Inner Source Programm', 'Schulungsprogramm (regelmäßig)'];
@@ -373,8 +837,9 @@ export function fallbackAnalysis(d: WizardData): AnalysisResult {
       items: [`${monorepoTool} Monorepo aufsetzen`, 'Config-Packages (ESLint, Prettier, TypeScript, Styling)', `${registryTool} + automatisierte Updates`, 'Reusable CI/CD Workflows mit Quality Gates', 'Architektur-Dokumentation + ADR-Template'] });
     waves.push({ number: 2, title: 'Design System & Shared UI', duration: '2–3 Wochen',
       items: ['UI-Komponentenbibliothek (15+ Komponenten)', 'Shared Core Utilities & Types', 'Storybook als Dokumentation', 'Design Tokens definieren', 'Pilot-Migration einer bestehenden App'] });
-    waves.push({ number: 3, title: 'Backend, Testing & Monitoring', duration: '2–3 Wochen',
-      items: [`${testingTool} + Coverage-Gate (min. 70%)`, 'Shared Testing Utilities', 'Error Handling Standard + Sentry', 'Uptime-Monitoring + Alerting', 'Testing Guide + Best Practices Dokumentation'] });
+    const w3ItemsLarge = [`${testingTool} + Coverage-Gate (min. 70%)`, 'Shared Testing Utilities', 'Error Handling Standard + Sentry', 'Uptime-Monitoring + Alerting', 'Testing Guide + Best Practices Dokumentation'];
+    if (auth === 'selfbuilt' || auth === 'jwt' || !has(sec, 'dependency-scan')) w3ItemsLarge.push('Security: Dependabot + CodeQL aktivieren, Auth-Provider evaluieren');
+    waves.push({ number: 3, title: 'Backend, Testing, Security & Monitoring', duration: '2–3 Wochen', items: w3ItemsLarge });
     waves.push({ number: 4, title: 'CLI, Migration & Onboarding', duration: '2–4 Wochen',
       items: ['CLI-Tool / Scaffolding für neue Apps', `Alle ${appNum} bestehenden Apps migrieren`, 'App-Versionierung (Git Tags)', 'Onboarding Runbook + Architektur-Workshop', 'Architecture Reviews einführen (alle 2 Wochen)'] });
     const w5 = ['Zentrales App-Dashboard', 'Erweitertes Monitoring (Grafana)', 'Feature Flags evaluieren', 'Schulungen (halbjährlich)'];
@@ -386,8 +851,10 @@ export function fallbackAnalysis(d: WizardData): AnalysisResult {
       items: [`${monorepoTool} Monorepo aufsetzen`, 'Config-Packages erstellen', 'Reusable CI/CD Workflows', 'Architektur-Dokumentation anlegen'] });
     waves.push({ number: 2, title: 'Design System & UI', duration: '4–6 Tage',
       items: ['UI-Komponentenbibliothek', 'Shared Utilities & Types', 'Storybook deployen', 'Pilot-Migration einer App'] });
-    waves.push({ number: 3, title: 'Backend & Testing', duration: '4–6 Tage',
-      items: [`${testingTool} einrichten`, 'Testing Guide schreiben', 'Error Handling Standard', 'Coverage-Gate in CI'] });
+    const w3ItemsMedium = [`${testingTool} einrichten`, 'Testing Guide schreiben', 'Error Handling Standard', 'Coverage-Gate in CI'];
+    if (auth === 'selfbuilt' || auth === 'jwt') w3ItemsMedium.push('Auth-Provider migrieren (Auth0 / Supabase Auth)');
+    if (!has(sec, 'dependency-scan')) w3ItemsMedium.push('Dependabot + CodeQL aktivieren');
+    waves.push({ number: 3, title: 'Backend, Testing & Security', duration: '4–6 Tage', items: w3ItemsMedium });
     waves.push({ number: 4, title: 'CLI & Migration', duration: '3–5 Tage',
       items: ['CLI-Tool / Scaffolding', `${appNum} bestehende Apps migrieren`, 'Versionierung einführen', 'Onboarding Runbook'] });
     const w5 = ['Dashboard', 'Monitoring & Alerting', 'Schulungen'];
@@ -399,8 +866,10 @@ export function fallbackAnalysis(d: WizardData): AnalysisResult {
       items: [`${monorepoTool} aufsetzen`, 'Config-Packages', 'Reusable CI/CD', 'README & Doku anlegen'] });
     waves.push({ number: 2, title: 'Design System & UI', duration: '3–4 Tage',
       items: ['UI-Bibliothek', 'Shared Utilities', 'Storybook', 'Pilot-Migration'] });
-    waves.push({ number: 3, title: 'Backend & Testing', duration: '3–4 Tage',
-      items: [`${testingTool} einrichten`, 'Error Handling', 'Coverage-Gate', 'Testing Guide'] });
+    const w3ItemsSmall = [`${testingTool} einrichten`, 'Error Handling', 'Coverage-Gate', 'Testing Guide'];
+    if (auth === 'selfbuilt' || auth === 'jwt') w3ItemsSmall.push('Auth-Provider evaluieren (Auth0 / Supabase Auth)');
+    if (!has(sec, 'dependency-scan')) w3ItemsSmall.push('Dependabot aktivieren');
+    waves.push({ number: 3, title: 'Backend, Testing & Security', duration: '3–4 Tage', items: w3ItemsSmall });
     waves.push({ number: 4, title: 'CLI & Migration', duration: '2–4 Tage',
       items: ['CLI-Tool', 'Apps migrieren', 'Versionierung', 'Runbook'] });
     const w5 = ['Dashboard', 'Monitoring', 'Schulungen'];
