@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { useAppStore } from '@/stores/appStore';
-import { SEED_PROJECTS } from '@/lib/seed-data';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,20 +17,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void loadFromSupabase()
       .then(async () => {
-        // Nach Supabase-Load: wenn immer noch leer → Seed-Daten laden
-        const projects = useAppStore.getState().projects;
-        if (projects.length === 0) {
-          useAppStore.setState({ projects: SEED_PROJECTS });
-        }
-        // Profil sequentiell laden – Session ist hier garantiert verfügbar
         await loadUserProfile();
       })
       .catch(() => {
-        // Supabase nicht verfügbar → Seed-Daten laden wenn Store leer
-        const projects = useAppStore.getState().projects;
-        if (projects.length === 0) {
-          useAppStore.setState({ projects: SEED_PROJECTS });
-        }
+        // Supabase nicht verfügbar – App startet mit leerem Store
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
