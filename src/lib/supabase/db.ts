@@ -8,6 +8,7 @@ import {
   Project, WizardData, AnalysisResult, Task, TaskStatus,
   ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig,
   UserProfile, UserRole,
+  Organization, OrgMember, OrgRole,
 } from '@/types';
 
 // ── Hilfsfunktionen: DB-Rows ↔ App-Typen ────────────────────
@@ -34,6 +35,7 @@ function rowToProject(row: Record<string, unknown>): Project {
     tasks: [],
     chatHistory: [],
     snapshots: [],
+    orgId: (row.org_id as string) || undefined,
   };
 }
 
@@ -429,3 +431,155 @@ export async function dbUpdateDisplayName(displayName: string): Promise<void> {
     .update({ display_name: displayName })
     .eq('user_id', userId);
 }
+
+// ── Organisations-Modul ──────────────────────────────────────
+
+function rowToOrganization(row: Record<string, unknown>): Organization {
+  return {
+    id:          row.id as string,
+    name:        row.name as string,
+    slug:        row.slug as string,
+    description: row.description as string | undefined,
+    createdBy:   row.created_by as string,
+    createdAt:   row.created_at as string,
+  };
+}
+
+function rowToOrgMember(row: Record<string, unknown>): OrgMember {
+  return {
+    id:          row.id as string,
+    orgId:       row.org_id as string,
+    userId:      row.user_id as string,
+    role:        row.role as OrgRole,
+    createdAt:   row.created_at as string,
+    displayName: row.display_name as string | undefined,
+    email:       row.email as string | undefined,
+  };
+}
+
+/** Alle Organisationen laden, in denen der User Mitglied ist. */
+export async function dbGetMyOrganizations(): Promise<Organization[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = createClient();
+  const userId = await getUserId();
+  if (!userId) return [];
+  // Zuerst Org-IDs aus org_members laden (vermeidet rekursive RLS-Probleme)
+  const { data: memberRows } = await supabase
+    .from('org_members')
+    .select('org_id')
+    .eq('user_id', userId);
+  if (!memberRows || memberRows.length === 0) return [];
+  const orgIds = memberRows.map((r: Record<string, unknown>) => r.org_id as string);
+  const { data } = await supabase
+    .from('organizations')
+    .select('*')
+    .in('id', orgIds)
+    .order('created_at', { ascending: false });
+  return (data ?? []).map(r => rowToOrganization(r as Record<string, unknown>));
+}
+
+/** Eine Organisation anlegen und den Ersteller als Owner eintragen. */
+export async function dbCreateOrganization(org: Omit<Organization, 'id' | 'createdAt' | 'createdBy'>): Promise<Organization | null> {
+  if (!isSupabaseConfigured()) return null;
+  const supabase = createClient();
+  const userId = await getUserId();
+  if (!userId) return null;
+
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('organizations')
+    .insert({ id, name: org.name, slug: org.slug, description: org.description ?? null, created_by: userId, created_at: createdAt });
+  if (error) return null;
+
+  // Ersteller als owner eintragen
+  const { error: memberError } = await supabase
+    .from('org_members')
+    .insert({ org_id: id, user_id: userId, role: 'owner' });
+  if (memberError) return null;
+
+  // Objekt aus lokalen Daten aufbauen – kein SELECT nötig (vermeidet RLS-Timing-Problem)
+  return { id, name: org.name, slug: org.slug, description: org.description, createdBy: userId, createdAt };
+}
+
+/** Organisation aktualisieren (nur Owner/Admin). */
+export async function dbUpdateOrganization(id: string, patch: Partial<Pick<Organization, 'name' | 'description'>>): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = createClient();
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+  if (patch.description !== undefined) dbPatch.description = patch.description;
+  await supabase.from('organizations').update(dbPatch).eq('id', id);
+}
+
+/** Organisation löschen (nur Owner). */
+export async function dbDeleteOrganization(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = createClient();
+  await supabase.from('organizations').delete().eq('id', id);
+}
+
+/** Alle Mitglieder einer Organisation laden. */
+export async function dbGetOrgMembers(orgId: string): Promise<OrgMember[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('org_members')
+    .select('*, user_profiles(display_name)')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: true });
+  if (!data) return [];
+  return data.map(r => {
+    const row = r as Record<string, unknown>;
+    const profile = row.user_profiles as Record<string, unknown> | null;
+    return rowToOrgMember({
+      ...row,
+      display_name: profile?.display_name ?? null,
+      email: null, // E-Mail nicht via REST-Join verfügbar (auth.users ist geschützt)
+    });
+  });
+}
+
+/** Mitglied zur Organisation hinzufügen. */
+export async function dbAddOrgMember(orgId: string, userId: string, role: OrgRole = 'member'): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = createClient();
+  await supabase.from('org_members').insert({ org_id: orgId, user_id: userId, role });
+}
+
+/** Mitglieds-Rolle ändern. */
+export async function dbUpdateOrgMemberRole(orgId: string, userId: string, role: OrgRole): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = createClient();
+  await supabase.from('org_members').update({ role }).eq('org_id', orgId).eq('user_id', userId);
+}
+
+/** Mitglied aus Organisation entfernen. */
+export async function dbRemoveOrgMember(orgId: string, userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = createClient();
+  await supabase.from('org_members').delete().eq('org_id', orgId).eq('user_id', userId);
+}
+
+/** Projekte einer Organisation laden. */
+export async function dbGetOrgProjects(orgId: string): Promise<Project[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false });
+  return (data ?? []).map(r => rowToProject(r as Record<string, unknown>));
+}
+
+/** Ein bestehendes Projekt einer Organisation zuordnen. */
+export async function dbAssignProjectToOrg(projectId: string, orgId: string | null): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = createClient();
+  const userId = await getUserId();
+  if (!userId) return;
+  await supabase.from('projects').update({ org_id: orgId }).eq('id', projectId).eq('user_id', userId);
+}
+

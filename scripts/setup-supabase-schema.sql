@@ -187,3 +187,125 @@ create trigger on_auth_user_created
 insert into public.user_profiles (user_id, role)
 select id, 'user' from auth.users
 on conflict (user_id) do nothing;
+
+-- ── 11. organizations ────────────────────────────────────────
+create table public.organizations (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  slug        text not null unique,
+  description text,
+  created_by  uuid not null references auth.users(id) on delete restrict,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+alter table public.organizations enable row level security;
+
+create trigger organizations_updated_at
+  before update on public.organizations
+  for each row execute function public.set_updated_at();
+
+create policy "orgs: Mitglieder lesen"
+  on public.organizations for select
+  using (
+    exists (
+      select 1 from public.org_members m
+      where m.org_id = id and m.user_id = auth.uid()
+    )
+  );
+
+create policy "orgs: Erstellen"
+  on public.organizations for insert
+  with check (auth.uid() = created_by);
+
+create policy "orgs: Owner/Admin aktualisiert"
+  on public.organizations for update
+  using (
+    exists (
+      select 1 from public.org_members m
+      where m.org_id = id
+        and m.user_id = auth.uid()
+        and m.role in ('owner', 'admin')
+    )
+  );
+
+create policy "orgs: Owner löscht"
+  on public.organizations for delete
+  using (
+    exists (
+      select 1 from public.org_members m
+      where m.org_id = id
+        and m.user_id = auth.uid()
+        and m.role = 'owner'
+    )
+  );
+
+-- ── 12. org_members ──────────────────────────────────────────
+create table public.org_members (
+  id         uuid primary key default gen_random_uuid(),
+  org_id     uuid not null references public.organizations(id) on delete cascade,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  role       text not null default 'member'
+             check (role in ('owner', 'admin', 'member')),
+  created_at timestamptz not null default now(),
+  unique (org_id, user_id)
+);
+alter table public.org_members enable row level security;
+
+create policy "org_members: lesen"
+  on public.org_members for select
+  using (
+    exists (
+      select 1 from public.org_members m2
+      where m2.org_id = org_id and m2.user_id = auth.uid()
+    )
+  );
+
+create policy "org_members: Owner/Admin fügt hinzu"
+  on public.org_members for insert
+  with check (
+    exists (
+      select 1 from public.org_members m
+      where m.org_id = org_id
+        and m.user_id = auth.uid()
+        and m.role in ('owner', 'admin')
+    )
+    or (
+      auth.uid() = user_id
+      and role = 'owner'
+      and not exists (
+        select 1 from public.org_members m where m.org_id = org_id
+      )
+    )
+  );
+
+create policy "org_members: Owner/Admin aktualisiert"
+  on public.org_members for update
+  using (
+    exists (
+      select 1 from public.org_members m
+      where m.org_id = org_id
+        and m.user_id = auth.uid()
+        and m.role in ('owner', 'admin')
+    )
+  );
+
+create policy "org_members: Owner/Admin entfernt"
+  on public.org_members for delete
+  using (
+    user_id = auth.uid()
+    or exists (
+      select 1 from public.org_members m
+      where m.org_id = org_id
+        and m.user_id = auth.uid()
+        and m.role in ('owner', 'admin')
+    )
+  );
+
+-- ── 13. projects: org_id-Spalte ──────────────────────────────
+alter table public.projects
+  add column if not exists org_id uuid references public.organizations(id) on delete set null;
+
+-- ── 14. user_profiles INSERT-Policy ─────────────────────────
+create policy "user_profiles: eigenen Eintrag anlegen"
+  on public.user_profiles for insert
+  with check (auth.uid() = user_id);

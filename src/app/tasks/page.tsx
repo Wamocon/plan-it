@@ -1,12 +1,12 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useAppStore } from '@/stores/appStore';
 import { TaskStatus, Task, Project } from '@/types';
 import {
   CheckCircle2, Circle, Clock, ChevronDown, ChevronRight,
   ArrowLeft, FolderOpen, Filter, Search, StickyNote,
-  ExternalLink, Trash2, BarChart3,
+  ExternalLink, Trash2, BarChart3, Building2,
 } from 'lucide-react';
 
 // ── Typen ────────────────────────────────────────────────────────────────────
@@ -30,6 +30,8 @@ function statusOrder(s: TaskStatus) { return s === 'open' ? 0 : s === 'in-progre
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 export default function TasksPage() {
   const projects        = useAppStore(s => s.projects);
+  const organizations   = useAppStore(s => s.organizations);
+  const loadOrganizations = useAppStore(s => s.loadOrganizations);
   const updateTaskStatus = useAppStore(s => s.updateTaskStatus);
   const deleteTask       = useAppStore(s => s.deleteTask);
 
@@ -37,17 +39,25 @@ export default function TasksPage() {
   const [groupBy,      setGroupBy]      = useState<GroupBy>('project');
   const [search,       setSearch]       = useState('');
   const [collapsed,    setCollapsed]    = useState<Set<string>>(new Set());
+  const [filterOrgId,  setFilterOrgId]  = useState<string | null>(null);
+
+  useEffect(() => { loadOrganizations(); }, [loadOrganizations]);
+
+  // Projekte nach Org filtern
+  const visibleProjects = filterOrgId
+    ? projects.filter(p => p.orgId === filterOrgId)
+    : projects;
 
   // Alle Tasks aus allen Projekten flach zusammenführen
   const allTasks = useMemo<FlatTask[]>(() => {
-    return projects.flatMap(p =>
+    return visibleProjects.flatMap(p =>
       (p.tasks ?? []).map(t => ({
         ...t,
         projectId: p.id,
         projectName: p.data.projectName as string || 'Unbenannt',
       }))
     );
-  }, [projects]);
+  }, [visibleProjects]);
 
   // Filter + Suche
   const filtered = useMemo(() => {
@@ -68,6 +78,9 @@ export default function TasksPage() {
       ? Math.round(allTasks.filter(t => t.status === 'done').length / allTasks.length * 100)
       : 0,
   }), [allTasks]);
+
+  // Beschreibungstext für Header
+  const orgName = filterOrgId ? organizations.find(o => o.id === filterOrgId)?.name : null;
 
   // Gruppierung
   const groups = useMemo<{ key: string; label: string; tasks: FlatTask[] }[]>(() => {
@@ -142,10 +155,44 @@ export default function TasksPage() {
         <div>
           <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1">Steuerung</p>
           <h2 className="text-2xl font-black text-white leading-tight">Aufgabensteuerung</h2>
-          <p className="text-white/35 text-sm mt-0.5">{stats.total} Aufgabe{stats.total !== 1 ? 'n' : ''} aus {projects.length} Projekt{projects.length !== 1 ? 'en' : ''}</p>
+          <p className="text-white/35 text-sm mt-0.5">
+            {stats.total} Aufgabe{stats.total !== 1 ? 'n' : ''} aus {visibleProjects.length} Projekt{visibleProjects.length !== 1 ? 'en' : ''}
+            {orgName && <span className="text-blue-300/70"> · 🏢 {orgName}</span>}
+          </p>
         </div>
         <BarChart3 size={28} className="text-white/10 shrink-0 mt-1" />
       </div>
+
+      {/* Org-Filter */}
+      {organizations.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => setFilterOrgId(null)}
+            className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${
+              filterOrgId === null
+                ? 'bg-white/10 text-white border-white/20'
+                : 'bg-transparent text-white/40 border-white/10 hover:border-white/20 hover:text-white/60'
+            }`}>
+            Alle Projekte
+          </button>
+          {organizations.map(org => (
+            <button
+              key={org.id}
+              onClick={() => setFilterOrgId(filterOrgId === org.id ? null : org.id)}
+              className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${
+                filterOrgId === org.id
+                  ? 'bg-blue-600/30 text-blue-300 border-blue-500/40'
+                  : 'bg-transparent text-white/40 border-white/10 hover:border-blue-500/30 hover:text-blue-300/70'
+              }`}>
+              <Building2 size={11} />
+              {org.name}
+              <span className="text-[10px] opacity-60">
+                {projects.filter(p => p.orgId === org.id).reduce((s, p) => s + (p.tasks ?? []).length, 0)}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Stats-Karten */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

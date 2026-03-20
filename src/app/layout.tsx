@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <body className="min-h-screen flex flex-col">
+      <body className="h-screen overflow-hidden flex flex-col">
         <ThemeProvider>
           <AppShell>{children}</AppShell>
           <Footer />
