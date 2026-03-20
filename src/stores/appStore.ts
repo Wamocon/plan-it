@@ -288,6 +288,15 @@ export const useAppStore = create<AppStore>()(
         return roles.includes(role);
       },
     }),
-    { name: 'plan-it-store' }
+    {
+      name: 'plan-it-store',
+      // userProfile und allUserProfiles werden nie gecacht – immer frisch von Supabase geladen.
+      // Verhindert Race-Condition zwischen Persist-Rehydrierung und loadUserProfile().
+      partialize: (state) => ({
+        projects:     state.projects,
+        jiraConfigs:  state.jiraConfigs,
+        aiConfigs:    state.aiConfigs,
+      }),
+    }
   )
 );

@@ -17,12 +17,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Load cloud data and user profile once on mount
   useEffect(() => {
     void loadFromSupabase()
-      .then(() => {
+      .then(async () => {
         // Nach Supabase-Load: wenn immer noch leer → Seed-Daten laden
         const projects = useAppStore.getState().projects;
         if (projects.length === 0) {
           useAppStore.setState({ projects: SEED_PROJECTS });
         }
+        // Profil sequentiell laden – Session ist hier garantiert verfügbar
+        await loadUserProfile();
       })
       .catch(() => {
         // Supabase nicht verfügbar → Seed-Daten laden wenn Store leer
@@ -31,7 +33,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           useAppStore.setState({ projects: SEED_PROJECTS });
         }
       });
-    void loadUserProfile().catch(() => {/* Supabase nicht konfiguriert */});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
