@@ -289,7 +289,7 @@ export const useAppStore = create<AppStore>()(
       },
     }),
     {
-      name: 'plan-it-store',
+      name: `plan-it-store-${process.env.NEXT_PUBLIC_DB_SCHEMA ?? 'public'}`,
       // userProfile und allUserProfiles werden nie gecacht – immer frisch von Supabase geladen.
       // Verhindert Race-Condition zwischen Persist-Rehydrierung und loadUserProfile().
       partialize: (state) => ({
