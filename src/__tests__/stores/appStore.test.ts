@@ -556,4 +556,50 @@ describe('useAppStore', () => {
       expect(useAppStore.getState().userProfile).toBeNull();
     });
   });
+
+  // ── UUID-Format ──────────────────────────────────────────────
+  describe('ID-Generierung (UUID-Format für Supabase)', () => {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    it('addProject() erzeugt eine valide UUID als Projekt-ID', () => {
+      const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
+      expect(project.id).toMatch(UUID_REGEX);
+    });
+
+    it('addTask() erzeugt eine valide UUID als Task-ID', () => {
+      const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
+      useAppStore.getState().addTask(project.id, 1, 'Wave 1', 'Setup CI');
+      const task = useAppStore.getState().getProject(project.id)!.tasks[0];
+      expect(task.id).toMatch(UUID_REGEX);
+    });
+
+    it('addChatMessage() erzeugt eine valide UUID als Message-ID', () => {
+      const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
+      useAppStore.getState().addChatMessage(project.id, { role: 'user', content: 'Hallo' });
+      const msg = useAppStore.getState().getProject(project.id)!.chatHistory[0];
+      expect(msg.id).toMatch(UUID_REGEX);
+    });
+
+    it('takeSnapshot() erzeugt eine valide UUID als Snapshot-ID', () => {
+      const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
+      useAppStore.getState().takeSnapshot(project.id);
+      const snap = useAppStore.getState().getProject(project.id)!.snapshots[0];
+      expect(snap.id).toMatch(UUID_REGEX);
+    });
+
+    it('addJiraConfig() erzeugt eine valide UUID als Config-ID', () => {
+      const config = useAppStore.getState().addJiraConfig({
+        label: 'Test', baseUrl: 'https://jira.test', email: 'a@b.c',
+        apiToken: 'tok', projectKey: 'TP', issueType: 'Task',
+      });
+      expect(config.id).toMatch(UUID_REGEX);
+    });
+
+    it('addAiConfig() erzeugt eine valide UUID als Config-ID', () => {
+      const config = useAppStore.getState().addAiConfig({
+        provider: 'gemini', label: 'Test', apiKey: 'key', isActive: true,
+      });
+      expect(config.id).toMatch(UUID_REGEX);
+    });
+  });
 });

@@ -70,7 +70,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       addProject: (data, analysis) => {
-        const project: Project = { id: Date.now().toString(), data, analysis, createdAt: new Date().toISOString(), tasks: [], chatHistory: [], snapshots: [] };
+        const project: Project = { id: crypto.randomUUID(), data, analysis, createdAt: new Date().toISOString(), tasks: [], chatHistory: [], snapshots: [] };
         set((state) => ({ projects: [project, ...state.projects] }));
         void dbAddProject(project);
         return project;
@@ -82,7 +82,7 @@ export const useAppStore = create<AppStore>()(
             if (p.id !== id) return p;
             const snapshots = p.snapshots || [];
             const newSnapshot: AnalysisSnapshot | null = p.analysis.score != null ? {
-              id: Date.now().toString(),
+              id: crypto.randomUUID(),
               takenAt: new Date().toISOString(),
               score: p.analysis.score,
               scoreLabel: p.analysis.scoreLabel,
@@ -115,7 +115,7 @@ export const useAppStore = create<AppStore>()(
 
       // ── Tasks ──
       addTask: (projectId, waveNumber, waveTitle, item) => {
-        const task: Task = { id: Date.now().toString(), waveNumber, waveTitle, item, status: 'open', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+        const task: Task = { id: crypto.randomUUID(), waveNumber, waveTitle, item, status: 'open', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? { ...p, tasks: [...(p.tasks || []), task] } : p) }));
         void dbAddTask(task, projectId);
       },
@@ -152,7 +152,7 @@ export const useAppStore = create<AppStore>()(
 
       // ── Chat ──
       addChatMessage: (projectId, message) => {
-        const msg: ChatMessage = { ...message, id: Date.now().toString(), createdAt: new Date().toISOString() };
+        const msg: ChatMessage = { ...message, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
         set(state => ({ projects: state.projects.map(p => p.id === projectId ? { ...p, chatHistory: [...(p.chatHistory || []), msg] } : p) }));
         void dbAddChatMessage(msg, projectId);
       },
@@ -167,7 +167,7 @@ export const useAppStore = create<AppStore>()(
         set(state => ({ projects: state.projects.map(p => {
           if (p.id !== projectId) return p;
           const snap: AnalysisSnapshot = {
-            id: Date.now().toString(),
+            id: crypto.randomUUID(),
             takenAt: new Date().toISOString(),
             score: p.analysis.score,
             scoreLabel: p.analysis.scoreLabel,
@@ -184,7 +184,7 @@ export const useAppStore = create<AppStore>()(
       jiraConfigs: [],
 
       addJiraConfig: (config) => {
-        const newConfig: JiraConfig = { ...config, id: Date.now().toString(), createdAt: new Date().toISOString() };
+        const newConfig: JiraConfig = { ...config, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
         set(state => ({ jiraConfigs: [...state.jiraConfigs, newConfig] }));
         void dbAddJiraConfig(newConfig);
         return newConfig;
@@ -205,7 +205,7 @@ export const useAppStore = create<AppStore>()(
 
       addAiConfig: (config) => {
         const isFirst = get().aiConfigs.length === 0;
-        const newConfig: AiConfig = { ...config, id: Date.now().toString(), isActive: config.isActive || isFirst, createdAt: new Date().toISOString() };
+        const newConfig: AiConfig = { ...config, id: crypto.randomUUID(), isActive: config.isActive || isFirst, createdAt: new Date().toISOString() };
         set(state => ({
           aiConfigs: config.isActive
             ? [...state.aiConfigs.map(c => ({ ...c, isActive: false })), newConfig]
