@@ -1,15 +1,16 @@
 # plan-it
-### Architekturplaner – planen & umsetzen
+### IT-Architekturplaner – analysieren, planen & umsetzen
 
-Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchitekturen – entwickelt von WAMOCON.
+Interaktives Tool zur KI-gestützten Analyse, Planung und Dokumentation von IT-Architekturen – entwickelt von WAMOCON.
 
 ## Features
 
 ### Analyse & Planung
-- **Projekt-Dashboard** — Übersicht aller Projekte mit KPI-Karten (Score, Risiken, KI-Analysen)
-- **4-Schritte-Wizard** — Freitextfelder bei jeder Auswahl, vollständig konfigurierbar
-- **KI-gestützte Analyse** — Google Gemini 2.0 Flash analysiert den Ist-Zustand individuell (5 Phasen)
+- **Projekt-Dashboard** — Übersicht aller Projekte mit KPI-Karten (Score, Risiken, Trends)
+- **4-Schritte-Wizard** — Strukturierte Erfassung von Team, Stack, Prozessen und Infrastruktur
+- **KI-gestützte Analyse** — Google Gemini 2.0 Flash bewertet den Ist-Zustand in 5 Phasen
 - **Regelbasierter Fallback** — Lokal, ohne API-Key, immer verfügbar
+- **Architektur-Score** — Technische Reifegrad-Bewertung 0–100 mit Label (Kritisch → Hervorragend)
 - **Zielzustand-Empfehlung** — Automatisch generierte Soll-Architektur
 - **5-Wellen-Umsetzungsplan** — Mit Deliverables und Zeitschätzungen
 
@@ -20,7 +21,7 @@ Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchite
 | **Risiken** | Risikokatalog nach Schweregrad (Hoch / Mittel / Niedrig) |
 | **Risiko-Heatmap** | SVG-Matrix Impact × Wahrscheinlichkeit |
 | **Soll-Zustand** | Empfohlene Zielarchitektur mit Begründung |
-| **Umsetzungswellen** | 5-Wellen-Plan mit Items und Zeitrahmen |
+| **Umsetzungswellen** | Wellenplan mit Items und Zeitrahmen |
 | **Aufgaben** | Maßnahmen-Tracker mit Fortschrittsanzeige und Jira-Integration |
 | **Score-Trend** | Historische Entwicklung des Architektur-Scores |
 | **KI-Chat** | Nachfragen zur Analyse direkt im Projekt |
@@ -30,6 +31,11 @@ Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchite
 - Status-Zyklus: Offen → In Arbeit → Erledigt
 - Inline-Notizen pro Aufgabe
 - Gesamtfortschritts-Balken
+- Externe Jira-Verlinkung pro Task
+
+### Globale Aufgabenübersicht (`/tasks`)
+- Alle offenen Tasks über alle Projekte hinweg
+- Filterung nach Status und Projekt
 
 ### Jira-Integration
 - Beliebige Jira-Instanzen (Cloud & Server) einbinden
@@ -38,12 +44,19 @@ Interaktives Tool zur Planung, Analyse und Dokumentation von Unternehmensarchite
 - Mehrere Instanzen konfigurierbar (Auswahl beim Push)
 - Verlinkung zum erstellten Vorgang direkt im Tracker
 
+### Benutzerverwaltung & Rollen
+- Rollensystem: `admin` · `it-architect` · `developer` · `user`
+- Admin-Interface unter `/admin/users` zur Rollen- und Profilverwaltung
+- Automatische Profilerstellung bei Registrierung (Trigger)
+- Supabase Auth mit E-Mail/Passwort
+
 ### Weitere Features
 - **Projektvergleich** — Zwei Projekte nebeneinander mit Score, Metriken, Risiken und Tech-Stack-Diff
 - **Score-Trend** — Automatischer Snapshot bei jeder Re-Analyse
 - **KI-Chat** — Kontextbezogene Antworten auf Basis der vollständigen Analyse
-- **PDF & DOCX Export** — Analysebericht exportieren
-- **Persistenz** — Lokale Speicherung via Zustand + localStorage **oder** vollständige Appwrite-Persistenz (Cloud/Self-Hosted)
+- **PDF & DOCX Export** — Professioneller Analysebericht exportieren
+- **Dark/Light Mode** — Vollständige Theme-Unterstützung
+- **Supabase Persistenz** — Vollständige Cloud-Datenhaltung mit RLS
 
 ---
 
@@ -55,7 +68,7 @@ npm install
 
 # Umgebungsvariablen anlegen
 cp .env.example .env.local
-# GOOGLE_AI_API_KEY=dein_key_hier eintragen (optional)
+# Werte eintragen (siehe Abschnitt "Umgebungsvariablen")
 
 # Starten
 npm run dev
@@ -63,15 +76,80 @@ npm run dev
 
 Öffne [http://localhost:3000](http://localhost:3000).
 
-**Ohne KI-API-Key** funktioniert die App mit regelbasierter Analyse.  
-**Mit KI-API-Key** analysiert Google Gemini die Daten individuell und gibt spezifischere Empfehlungen.  
-**Authentifizierung:** Die App erfordert eine laufende Appwrite-Instanz. Ohne gültige Session wird auf `/auth/login` umgeleitet.
+**Ohne KI-API-Key** funktioniert die App mit regelbasierter Fallback-Analyse.  
+**Mit KI-API-Key** analysiert Google Gemini 2.0 Flash die Architektur individuell.  
+**Authentifizierung:** Supabase Auth — ohne gültige Session wird auf `/auth/login` umgeleitet.
 
 ---
 
-## Lokale Schema-Inspektion (Docker)
+## Umgebungsvariablen
 
-Die mitgelieferte `docker-compose.yml` startet PostgreSQL + pgAdmin zur Inspektion des SQL-Schemas. Dies spiegelt die Collection-Struktur der Appwrite-Datenbank:
+```bash
+# .env.local
+GOOGLE_AI_API_KEY=          # Google Gemini API Key (kostenlos: aistudio.google.com)
+
+NEXT_PUBLIC_SUPABASE_URL=   # Supabase Projekt-URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=  # Supabase Publishable Key
+
+# Nur für Seed-Skript (npm run seed:supabase) – nie im Frontend verwenden!
+SUPABASE_SERVICE_ROLE_KEY=  # Supabase Secret Key
+SEED_USER_ID=               # UUID des Users für Seed-Daten
+```
+
+| Variable | Typ | Beschreibung |
+|----------|-----|-------------|
+| `GOOGLE_AI_API_KEY` | Optional | Gemini 2.0 Flash. Ohne Key → Fallback-Analyse |
+| `NEXT_PUBLIC_SUPABASE_URL` | Pflicht | Project Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Pflicht | Project Settings → API Keys → Publishable key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Seed only | Project Settings → API Keys → Secret key |
+| `SEED_USER_ID` | Seed only | Authentication → Users → User-UUID |
+
+---
+
+## Supabase-Integration
+
+### Ersteinrichtung (einmalig)
+
+Schema im Supabase SQL-Editor ausführen:  
+Dashboard → **SQL Editor** → **New query** → Inhalt von `scripts/setup-supabase-schema.sql` einfügen → **Run**
+
+### Testdaten einspielen (20 Demo-Projekte)
+
+```bash
+npm run seed:supabase
+```
+
+Fügt 20 realistische Demo-Projekte mit Risiken, Umsetzungswellen und Tasks ein.
+
+### Daten zurücksetzen und neu befüllen
+
+```bash
+# 1. Alle Projektdaten löschen (im Supabase SQL Editor):
+TRUNCATE public.analysis_snapshots, public.chat_messages, public.tasks, public.projects CASCADE;
+
+# 2. Seed neu einspielen:
+npm run seed:supabase
+```
+
+Falls auch das Schema neu aufgesetzt werden soll: `scripts/setup-supabase-schema.sql` erneut im SQL Editor ausführen, dann Seed.
+
+### Datenbankschema
+
+| Tabelle | Inhalt |
+|---------|--------|
+| `projects` | Wizard-Daten (JSONB) + Analyse-Ergebnisse (JSONB) |
+| `tasks` | Maßnahmen mit Status, Notizen, Jira-Verknüpfung |
+| `chat_messages` | KI-Chat-Historie pro Projekt |
+| `analysis_snapshots` | Historische Score-Snapshots (Score-Trend) |
+| `user_profiles` | Rollen (`admin`, `it-architect`, `developer`, `user`) |
+| `ai_configs` | Gespeicherte KI-API-Keys |
+| `jira_configs` | Jira-Verbindungskonfigurationen |
+
+Alle Tabellen sind durch **Row Level Security** geschützt (`auth.uid() = user_id`).
+
+---
+
+## Lokale Entwicklung (Docker)
 
 ```bash
 # PostgreSQL + pgAdmin starten
@@ -81,52 +159,48 @@ npm run db:start
 # Login: admin@local.dev / admin
 # PostgreSQL: localhost:5432 / plan-it / postgres / postgres
 
-# DB stoppen
-npm run db:stop
-
-# DB zurücksetzen (alle Daten löschen + Schema neu einspielen)
-npm run db:reset
-
-# Logs anzeigen
-npm run db:logs
+npm run db:stop      # stoppen
+npm run db:reset     # zurücksetzen (Volume löschen + neu starten)
+npm run db:logs      # Logs anzeigen
 ```
-
-Das SQL-Schema wird beim ersten Start automatisch aus `supabase/migrations/` eingespielt (Referenz-Schema; die Laufzeit-Persistenz erfolgt über Appwrite).
 
 ---
 
-## Appwrite-Integration (Auth + Cloud-Datenbank)
+## Rollen-Konzept
 
-Für persistente Cloud-Speicherung mit Authentifizierung:
+| Rolle | Berechtigungen |
+|-------|---------------|
+| `admin` | Voller Zugriff + Rollenverwaltung unter `/admin/users` |
+| `it-architect` | Projekte erstellen, Analysen durchführen |
+| `developer` | Tasks einsehen und bearbeiten |
+| `user` | Lesender Zugriff |
 
-1. Appwrite-Instanz anlegen – [Appwrite Cloud](https://cloud.appwrite.io) (kostenlos) oder Self-Hosted
-2. Neues Projekt anlegen, Projekt-ID notieren
-3. Datenbank `plan-it` anlegen
-4. Collections anlegen: `projects`, `tasks`, `chat_messages`, `analysis_snapshots`, `jira_configs`, `ai_configs`
-5. API-Key in Appwrite erstellen (alle Datenbank-Scopes)
-6. Umgebungsvariablen setzen:
-
-```bash
-# .env.local
-NEXT_PUBLIC_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
-NEXT_PUBLIC_APPWRITE_PROJECT_ID=dein-projekt-id
-APPWRITE_API_KEY=dein-api-key
-NEXT_PUBLIC_APPWRITE_DATABASE_ID=plan-it
-```
-
-7. App starten — Benutzer werden automatisch auf `/auth/login` weitergeleitet (E-Mail/Passwort)
-
-> **Lokaler Betrieb:** Ohne laufende Appwrite-Instanz werden alle Anfragen auf `/auth/login` umgeleitet.
-> Für rein lokale Tests kann Appwrite per Docker gestartet werden (siehe [Appwrite-Dokumentation](https://appwrite.io/docs/self-hosting)).
+Rollen werden bei Registrierung automatisch als `user` angelegt (Supabase Trigger).  
+Admins können Rollen im Admin-Interface ändern.
 
 ---
 
 ## Jira einrichten
 
-1. **Einstellungen** in der Sidebar öffnen
+1. **Einstellungen** (`/settings`) in der Sidebar öffnen
 2. **Neue Verbindung** anlegen: Jira-URL, E-Mail, [API-Token](https://id.atlassian.com/manage-profile/security/api-tokens), Projekt-Schlüssel und Vorgangstyp
-3. Verbindung testen
-4. Im **Aufgaben-Tab** eines Projekts: Hover über eine Aufgabe → Link-Icon klicken → Jira-Vorgang wird angelegt
+3. **Verbindung testen** — direkter Ping aus der App
+4. Im **Aufgaben-Tab** eines Projekts: Hover über eine Aufgabe → Link-Icon → Jira-Vorgang wird angelegt
+
+---
+
+## API-Routen
+
+| Route | Methode | Beschreibung |
+|-------|---------|-------------|
+| `/api/analyze` | POST | KI-Analyse via Gemini (5-Phasen) oder Fallback |
+| `/api/chat` | POST | KI-Chat-Proxy mit Projektkontext |
+| `/api/sync` | POST | Supabase-Datensync für lokale Zustand-Änderungen |
+| `/api/jira/issue` | POST | Jira-Vorgang aus Task erstellen |
+| `/api/jira/test` | POST | Jira-Verbindung testen |
+| `/api/admin/users` | GET/PATCH | Benutzerverwaltung (Admin only) |
+| `/api/auth/session` | POST/DELETE | Supabase Session verwalten |
+| `/auth/callback` | GET | Supabase Auth OAuth-Callback |
 
 ---
 
@@ -140,33 +214,34 @@ Wizard-Daten
 │ POST /api/analyze    │
 │                      │
 │ ┌─ Gemini API Key?──┐│
-│ │  JA: KI-Analyse   ││  ← 5-Phasen-Analyse (Ist, Risiken,
-│ │  (Gemini 2.0 Flash)││    Soll, Wellen, Score)
-│ │                    ││
-│ │  NEIN: Fallback    ││  ← Regelbasierte If-Then-Analyse
-│ │  (lokal)           ││    Funktioniert immer, generischer
+│ │  JA: KI-Analyse   ││  ← 5-Phasen (Ist, Risiken, Soll, Wellen, Score)
+│ │  (Gemini 2.0 Flash)│
+│ │  NEIN: Fallback   ││  ← Regelbasierte If-Then-Analyse (lokal, immer verfügbar)
 │ └────────────────────┘│
 └─────────────────────┘
     │
     ▼
-Analysebericht mit 8 Tabs + Chat + Jira-Anbindung
+Analysebericht (8 Tabs) + Chat + Export + Jira
 ```
 
 ---
 
 ## Tech Stack
 
-- **Next.js 16** (App Router, latest)
-- **React 18** + TypeScript
-- **Tailwind CSS** — Dark Theme, WAMOCON Corporate Design
-- **Zustand** mit `persist`-Middleware (localStorage)
-- **Appwrite** (`node-appwrite`) — Auth + Cloud-DB (optional)
-- **PostgreSQL 16** via Docker — Lokale Schema-Inspektion (pgAdmin)
-- **Google Generative AI** — Gemini 2.0 Flash
-- **jsPDF + docx** — PDF & Word Export
-- **lucide-react** — Icons
-- **SVG-Charts** — Heatmap, Trendlinie (kein externes Chart-Framework)
-- **Vitest** — Unit-Tests mit Coverage
+| Bereich | Technologie |
+|---------|------------|
+| Framework | Next.js 16.1 (App Router) |
+| Sprache | TypeScript 5.3 |
+| Styling | Tailwind CSS 3.4, tailwind-merge |
+| Icons | lucide-react |
+| Auth + DB | Supabase (`@supabase/supabase-js` 2.99, `@supabase/ssr` 0.9) |
+| KI | Google Generative AI 0.21 (Gemini 2.0 Flash) |
+| State | Zustand 4.5 mit persist-Middleware |
+| Export | jsPDF 4.2 + jspdf-autotable, docx 9.6 |
+| Datum | date-fns 3.6 |
+| Testing | Vitest 2.1 + @vitest/coverage-v8 |
+| Dev-Tools | tsx, dotenv, ESLint |
+| Infra (lokal) | Docker (PostgreSQL 16 + pgAdmin) |
 
 ---
 
@@ -175,29 +250,108 @@ Analysebericht mit 8 Tabs + Chat + Jira-Anbindung
 ```
 src/
 ├── app/
-│   ├── page.tsx                        # Dashboard mit KPI-Karten
-│   ├── wizard/page.tsx                 # Neues Projekt (4-Schritte)
-│   ├── project/[id]/page.tsx           # Projekt-Detailansicht
+│   ├── page.tsx                        # Dashboard
+│   ├── wizard/page.tsx                 # Neues Projekt (Wizard)
+│   ├── project/[id]/page.tsx           # Projektdetails (8 Analyse-Tabs)
 │   ├── compare/page.tsx                # Projektvergleich
-│   ├── settings/page.tsx               # Jira-Verbindungen verwalten
+│   ├── tasks/page.tsx                  # Globale Aufgabenübersicht
+│   ├── settings/page.tsx               # Jira + KI-Konfiguration
+│   ├── admin/users/page.tsx            # Benutzerverwaltung (Admin)
+│   ├── auth/
+│   │   ├── login/page.tsx              # Login / Registrierung
+│   │   └── callback/route.ts           # Supabase Auth Callback
 │   └── api/
 │       ├── analyze/route.ts            # KI-Analyse (Gemini + Fallback)
 │       ├── chat/route.ts               # KI-Chat Proxy
+│       ├── sync/route.ts               # Supabase Datensync
+│       ├── admin/users/route.ts        # User-Verwaltung (Admin)
+│       ├── auth/session/route.ts       # Session Management
 │       └── jira/
-│           ├── issue/route.ts          # Jira-Vorgang anlegen
+│           ├── issue/route.ts          # Jira-Vorgang erstellen
 │           └── test/route.ts           # Jira-Verbindung testen
 ├── components/
 │   ├── layout/
-│   │   ├── Header.tsx                  # WAMOCON Header mit AppLogo
-│   │   ├── Footer.tsx                  # Slim-Banner Footer
-│   │   └── Sidebar.tsx                 # Navigation & Projekt-Schnellzugriff
+│   │   ├── AppShell.tsx                # Layout-Wrapper + Datensync
+│   │   ├── Header.tsx                  # Header mit Theme-Toggle
+│   │   ├── Footer.tsx                  # Footer
+│   │   └── Sidebar.tsx                 # Navigation + Projekt-Schnellzugriff
 │   ├── analysis/
-│   │   ├── AnalysisView.tsx            # 8-Tab Analyse-Ansicht
-│   │   ├── TaskTracker.tsx             # Maßnahmen-Tracker + Jira
-│   │   ├── ProjectChat.tsx             # KI-Chat Komponente
-│   │   ├── RiskHeatmap.tsx             # SVG Risiko-Heatmap
-│   │   └── ScoreTrend.tsx              # SVG Score-Trendlinie
+│   │   ├── AnalysisView.tsx            # 8-Tab-Hub für Analyseergebnisse
+│   │   ├── TaskTracker.tsx             # Maßnahmen-Tracker + Jira-Push
+│   │   ├── ProjectChat.tsx             # KI-Chat mit Markdown
+│   │   ├── RiskHeatmap.tsx             # SVG Impact × Probability Matrix
+│   │   └── ScoreTrend.tsx              # SVG Score-Verlaufslinie
 │   ├── ui/
+│   │   ├── AppLogo.tsx                 # Isometrisches SVG-Logo
+│   │   ├── SmartSelect.tsx             # Select mit Freitext-Option
+│   │   ├── MultiSelect.tsx             # Multi-Auswahl
+│   │   ├── ThemeProvider.tsx           # Dark/Light Mode Provider
+│   │   └── ThemeToggle.tsx             # Theme-Umschalter
+│   └── wizard/WizardForm.tsx           # Dynamisches Wizard-Formular
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts                   # Browser-Client
+│   │   ├── server.ts                   # Server-Client (SSR)
+│   │   └── db.ts                       # CRUD-Layer (alle DB-Operationen)
+│   ├── fallback-analysis.ts            # Regelbasierte Analyse
+│   ├── wizard-steps.ts                 # Wizard-Konfiguration
+│   ├── export-pdf.ts                   # PDF-Export
+│   └── export-word.ts                  # Word-Export
+├── middleware.ts                        # Auth-Guard (schützt alle Routen)
+├── stores/appStore.ts                  # Zustand Store
+└── types/index.ts                      # Alle TypeScript-Typen
+
+scripts/
+├── seed-supabase.ts                    # 20 Demo-Projekte einspielen
+└── setup-supabase-schema.sql           # Produktions-Schema (einmalig)
+
+supabase/migrations/
+├── 00000000000000_local_dev_schema.sql # Schema für lokales Docker-Setup
+├── 00000000000001_seed_data.sql        # Lokale Seed-Daten (15 Projekte)
+├── 20240101000000_initial_schema.sql   # Produktions-Schema (Supabase)
+└── 20240102000000_roles_schema.sql     # Rollen-Erweiterung
+```
+
+---
+
+## npm Scripts
+
+```bash
+npm run dev              # Development Server starten
+npm run build            # Production Build
+npm run start            # Production Server
+npm run lint             # ESLint
+
+npm test                 # Tests einmalig ausführen
+npm run test:watch       # Tests im Watch-Modus
+npm run test:coverage    # Tests mit Coverage-Report
+npm run test:ui          # Tests mit Vitest UI
+
+npm run db:start         # Lokale Docker-DB starten
+npm run db:stop          # Lokale Docker-DB stoppen
+npm run db:reset         # Lokale Docker-DB zurücksetzen
+npm run db:logs          # Lokale Docker-DB Logs
+
+npm run seed:supabase    # 20 Demo-Projekte in Supabase einspielen
+```
+
+---
+
+## Tests
+
+```bash
+npm run test:coverage
+```
+
+| Bereich | Inhalt |
+|---------|--------|
+| Zustand Store | Unit-Tests aller Actions und Selektoren |
+| Supabase DB-Layer | CRUD, Auth, Fehlerbehandlung |
+| Middleware (Auth-Guard) | Session-Prüfung, Weiterleitungen |
+| Auth Callback | Supabase OAuth-Flow |
+| API-Routen | analyze, chat, jira (Integration-Tests) |
+| Docker-Infrastruktur | Schema-Validierung |
+
 │   │   ├── AppLogo.tsx                 # Isometrisches SVG-Logo
 │   │   ├── SmartSelect.tsx             # Select mit Freitext-Option
 │   │   └── MultiSelect.tsx
