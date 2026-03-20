@@ -19,9 +19,9 @@ export function AppLogo({ size = 36 }: { size?: number }) {
 }
 
 // Wordmark: Icon + "plan-IT" + optionale Tagline in einem SVG
-export function AppLogoWordmark({ height = 48, showTagline = true }: { height?: number; showTagline?: boolean }) {
+export function AppLogoWordmark({ height = 48, showTagline = true, forceDark = false }: { height?: number; showTagline?: boolean; forceDark?: boolean }) {
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = forceDark || theme === 'dark';
   // ViewBox 230 × 60; Icon nimmt linke 60px ein, Text rechts davon
   const vw = 400, vh = 66;
   const scale = height / vh;

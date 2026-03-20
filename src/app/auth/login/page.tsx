@@ -49,7 +49,7 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <AppLogoWordmark height={52} showTagline={true} />
+          <AppLogoWordmark height={52} showTagline={true} forceDark />
         </div>
 
         {/* Tab-Umschalter */}
