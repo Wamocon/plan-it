@@ -149,23 +149,6 @@ Alle Tabellen sind durch **Row Level Security** geschützt (`auth.uid() = user_i
 
 ---
 
-## Lokale Entwicklung (Docker)
-
-```bash
-# PostgreSQL + pgAdmin starten
-npm run db:start
-
-# pgAdmin öffnen: http://localhost:5050
-# Login: admin@local.dev / admin
-# PostgreSQL: localhost:5432 / plan-it / postgres / postgres
-
-npm run db:stop      # stoppen
-npm run db:reset     # zurücksetzen (Volume löschen + neu starten)
-npm run db:logs      # Logs anzeigen
-```
-
----
-
 ## Rollen-Konzept
 
 | Rolle | Berechtigungen |
@@ -241,7 +224,7 @@ Analysebericht (8 Tabs) + Chat + Export + Jira
 | Datum | date-fns 3.6 |
 | Testing | Vitest 2.1 + @vitest/coverage-v8 |
 | Dev-Tools | tsx, dotenv, ESLint |
-| Infra (lokal) | Docker (PostgreSQL 16 + pgAdmin) |
+| Infra | Supabase (Auth + DB + RLS) |
 
 ---
 
@@ -306,10 +289,9 @@ scripts/
 └── setup-supabase-schema.sql           # Produktions-Schema (einmalig)
 
 supabase/migrations/
-├── 00000000000000_local_dev_schema.sql # Schema für lokales Docker-Setup
-├── 00000000000001_seed_data.sql        # Lokale Seed-Daten (15 Projekte)
-├── 20240101000000_initial_schema.sql   # Produktions-Schema (Supabase)
-└── 20240102000000_roles_schema.sql     # Rollen-Erweiterung
+├── 20240101000000_initial_schema.sql   # Initiales Schema (Supabase)
+├── 20240102000000_roles_schema.sql     # Rollen-Erweiterung
+└── 20260320000000_two_schema_separation.sql  # prod/test Schema-Trennung
 ```
 
 ---
@@ -326,11 +308,6 @@ npm test                 # Tests einmalig ausführen
 npm run test:watch       # Tests im Watch-Modus
 npm run test:coverage    # Tests mit Coverage-Report
 npm run test:ui          # Tests mit Vitest UI
-
-npm run db:start         # Lokale Docker-DB starten
-npm run db:stop          # Lokale Docker-DB stoppen
-npm run db:reset         # Lokale Docker-DB zurücksetzen
-npm run db:logs          # Lokale Docker-DB Logs
 
 npm run seed:supabase    # 20 Demo-Projekte in Supabase einspielen
 ```
@@ -350,32 +327,7 @@ npm run test:coverage
 | Middleware (Auth-Guard) | Session-Prüfung, Weiterleitungen |
 | Auth Callback | Supabase OAuth-Flow |
 | API-Routen | analyze, chat, jira (Integration-Tests) |
-| Docker-Infrastruktur | Schema-Validierung |
-
-│   │   ├── AppLogo.tsx                 # Isometrisches SVG-Logo
-│   │   ├── SmartSelect.tsx             # Select mit Freitext-Option
-│   │   └── MultiSelect.tsx
-│   └── wizard/WizardForm.tsx
-├── lib/
-│   ├── appwrite/
-│   │   ├── auth.ts                     # Auth-Client (E-Mail/Passwort, Appwrite Account API)
-│   │   ├── client.ts                   # Server- und Browser-Client (node-appwrite)
-│   │   └── db.ts                       # CRUD-Layer (20+ Funktionen, Appwrite Databases)
-│   ├── fallback-analysis.ts            # Regelbasierte Analyse
-│   ├── wizard-steps.ts                 # Wizard-Konfiguration
-│   ├── export-pdf.ts
-│   └── export-word.ts
-├── middleware.ts                        # Auth-Guard (Appwrite-Session-Cookie, Redirect zu /auth/login)
-├── stores/appStore.ts                  # Zustand Store + Appwrite-Persistenz
-└── types/index.ts                      # Alle TypeScript-Typen
-
-supabase/
-└── migrations/
-    ├── 00000000000000_local_dev_schema.sql   # SQL-Schema für lokale Inspektion via pgAdmin
-    └── 20240101000000_initial_schema.sql     # SQL-Referenzschema (Appwrite Collections spiegeln diese Struktur)
-
-docker-compose.yml                      # PostgreSQL 16 + pgAdmin
-```
+| Supabase-Infrastruktur | Schema-Validierung, Env-Prüfung |
 
 ---
 

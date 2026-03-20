@@ -119,7 +119,7 @@ function rowToAiConfig(row: Record<string, unknown>): AiConfig {
 
 // ── Öffentliche API ──────────────────────────────────────────
 
-/** Gibt null zurück wenn Supabase nicht konfiguriert ist (lokaler Docker-Modus). */
+/** Gibt null zurück wenn Supabase nicht konfiguriert ist. */
 function isSupabaseConfigured(): boolean {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
