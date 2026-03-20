@@ -11,10 +11,6 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "db:start": "docker compose up -d",
-    "db:stop": "docker compose down",
-    "db:reset": "docker compose down -v && docker compose up -d",
-    "db:logs": "docker compose logs -f postgres",
     "seed:supabase": "npx tsx scripts/seed-supabase.ts"
   },
   "dependencies": {

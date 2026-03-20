@@ -389,7 +389,7 @@
     <a class="toc-link l1" href="#deployment">8&nbsp; Deployment &amp; CI/CD</a>
     <a class="toc-link l2" href="#dep-cicd">8.1 GitHub Actions</a>
     <a class="toc-link l2" href="#dep-pages">8.2 GitHub Pages</a>
-    <a class="toc-link l2" href="#dep-docker">8.3 Docker / Lokal</a>
+    <a class="toc-link l2" href="#dep-local">8.3 Lokale Entwicklung</a>
 
     <a class="toc-link l1" href="#sicherheit">9&nbsp; Sicherheit</a>
     <a class="toc-link l1" href="#k6-synthese">10 K6-Synthese</a>
@@ -461,7 +461,7 @@
             <tr><td>Herausgeber</td><td>WAMOCON</td></tr>
             <tr><td>Version</td><td>1.0.0</td></tr>
             <tr><td>Lizenz</td><td>Proprietär / WAMOCON</td></tr>
-            <tr><td>Deployment</td><td>Vercel (Produktiv), lokal (Docker/Node.js)</td></tr>
+            <tr><td>Deployment</td><td>Vercel (Produktiv), lokal (Node.js + Supabase)</td></tr>
             <tr><td>Primäre URL</td><td>plan-it.io</td></tr>
             <tr><td>Sprache</td><td>Deutsch</td></tr>
           </tbody>
@@ -974,24 +974,13 @@
       </ul>
       <p>Der Workflow kombiniert beide Artefakte in einem Pages-Upload. Die Sidebar dieses Handbuchs verlinkt direkt auf den Coverage-Report.</p>
 
-      <h3 id="dep-docker">8.3 Lokale Entwicklung (Docker)</h3>
-      <p>Für lokale Schema-Inspektion und Entwicklung steht eine Docker-Compose-Konfiguration bereit (PostgreSQL + pgAdmin). Die Laufzeit-Persistenz erfolgt über Appwrite.</p>
-      <pre><code>npm run db:start   # PostgreSQL + pgAdmin starten
-npm run db:stop    # Datenbank stoppen
-npm run db:reset   # Datenbank zurücksetzen (Daten löschen + Schema neu einspielen)
-npm run db:logs    # Datenbankprotokoll streamen</code></pre>
+      <h3 id="dep-local">8.3 Lokale Entwicklung</h3>
+      <p>Die lokale Entwicklung nutzt dieselbe Supabase-Instanz wie die Produktivumgebung, jedoch mit einem separaten Datenbankschema (<code>test</code>). Die Konfiguration erfolgt über <code>.env.local</code>.</p>
+      <pre><code>npm install            # Abhängigkeiten installieren
+npm run seed:supabase  # 20 Demo-Projekte in Supabase einspielen
+npm run dev            # Entwicklungsserver starten</code></pre>
 
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Dienst</th><th>Port</th><th>Zugangsdaten</th></tr></thead>
-          <tbody>
-            <tr><td>PostgreSQL</td><td>5432</td><td>User: plan-it / Passwort: plan-it / DB: plan-it</td></tr>
-            <tr><td>pgAdmin</td><td>5050</td><td>admin@plan-it.local / admin</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p>Das SQL-Referenzschema wird beim ersten Start automatisch aus <code>supabase/migrations/</code> eingespielt und spiegelt die Appwrite-Collection-Struktur wider.</p>
+      <p>Das SQL-Schema liegt referenziell in <code>supabase/migrations/</code> und wird über den Supabase SQL-Editor eingespielt.</p>
     </section>
 
     <!-- ═══════════════════════════════════════════════════════
@@ -1068,7 +1057,7 @@ npm run db:logs    # Datenbankprotokoll streamen</code></pre>
             <tr>
               <td>Deployment-Reife</td>
               <td><span class="badge badge-green">Hoch (4/5)</span></td>
-              <td>CI/CD produktiv; Pages automatisch; Docker lokal; SQL-Referenzschema in supabase/migrations versioniert</td>
+              <td>CI/CD produktiv; Pages automatisch; Supabase lokal (test-Schema); SQL-Referenzschema in supabase/migrations versioniert</td>
             </tr>
           </tbody>
         </table>
