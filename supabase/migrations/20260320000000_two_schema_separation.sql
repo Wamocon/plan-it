@@ -133,6 +133,16 @@ ALTER TABLE prod.analysis_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "snapshots: eigene Einträge" ON prod.analysis_snapshots
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+-- ── Security-Definer-Funktion für Admin-Check (verhindert RLS-Rekursion) ────
+CREATE OR REPLACE FUNCTION prod.is_admin()
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM prod.user_profiles
+    WHERE user_id = auth.uid() AND role = 'admin'
+  );
+$$;
+GRANT EXECUTE ON FUNCTION prod.is_admin() TO anon, authenticated;
+
 CREATE TABLE prod.user_profiles (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -148,16 +158,10 @@ CREATE POLICY "user_profiles: eigenes Profil lesen" ON prod.user_profiles
   FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "user_profiles: Admin liest alle" ON prod.user_profiles
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM prod.user_profiles up
-            WHERE up.user_id = auth.uid() AND up.role = 'admin')
-  );
+  FOR SELECT USING (prod.is_admin());
 
 CREATE POLICY "user_profiles: Admin aktualisiert alle" ON prod.user_profiles
-  FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM prod.user_profiles up
-            WHERE up.user_id = auth.uid() AND up.role = 'admin')
-  );
+  FOR UPDATE USING (prod.is_admin());
 
 CREATE TRIGGER user_profiles_updated_at
   BEFORE UPDATE ON prod.user_profiles
@@ -264,6 +268,16 @@ ALTER TABLE test.analysis_snapshots ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "snapshots: eigene Einträge" ON test.analysis_snapshots
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+-- ── Security-Definer-Funktion für Admin-Check (verhindert RLS-Rekursion) ────
+CREATE OR REPLACE FUNCTION test.is_admin()
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM test.user_profiles
+    WHERE user_id = auth.uid() AND role = 'admin'
+  );
+$$;
+GRANT EXECUTE ON FUNCTION test.is_admin() TO anon, authenticated;
+
 CREATE TABLE test.user_profiles (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      uuid NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -279,16 +293,10 @@ CREATE POLICY "user_profiles: eigenes Profil lesen" ON test.user_profiles
   FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "user_profiles: Admin liest alle" ON test.user_profiles
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM test.user_profiles up
-            WHERE up.user_id = auth.uid() AND up.role = 'admin')
-  );
+  FOR SELECT USING (test.is_admin());
 
 CREATE POLICY "user_profiles: Admin aktualisiert alle" ON test.user_profiles
-  FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM test.user_profiles up
-            WHERE up.user_id = auth.uid() AND up.role = 'admin')
-  );
+  FOR UPDATE USING (test.is_admin());
 
 CREATE TRIGGER user_profiles_updated_at
   BEFORE UPDATE ON test.user_profiles
