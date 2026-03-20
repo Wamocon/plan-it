@@ -37,6 +37,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
+      {/* Scrollbarer Bereich: Navigation + Stats + Zuletzt */}
+      <div className="flex-1 overflow-y-auto min-h-0">
       {/* Navigation */}
       <nav className="p-3 flex flex-col gap-0.5">
         <div className="text-[9px] font-bold uppercase tracking-widest px-2 pt-3 pb-1.5 text-black/30 dark:text-white/20">
@@ -145,7 +147,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       )}
 
-      <div className="mt-auto p-3 border-t border-black/[0.05] dark:border-white/[0.04] flex flex-col gap-0.5">
+      </div>
+
+      {/* Fester Footer-Bereich */}
+      <div className="shrink-0 p-3 border-t border-black/[0.05] dark:border-white/[0.04] flex flex-col gap-0.5">
         {/* Theme-Umschalter */}
         <div className="mb-2 p-0.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.04] flex">
           <button
@@ -214,7 +219,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     <>
       {/* Desktop sidebar */}
       <aside
-        className="hidden md:flex flex-col w-52 shrink-0 border-r border-white/[0.06] dark:border-white/[0.06] overflow-y-auto"
+        className="hidden md:flex flex-col w-52 shrink-0 border-r border-white/[0.06] dark:border-white/[0.06]"
         style={{ background: sidebarBgDesktop }}
       >
         <SidebarContent />
@@ -228,7 +233,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
             onClick={onClose}
           />
           <aside
-            className="fixed inset-y-0 left-0 z-50 flex flex-col w-72 md:hidden overflow-y-auto"
+            className="fixed inset-y-0 left-0 z-50 flex flex-col w-72 md:hidden"
             style={{ background: sidebarBgMobile }}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.07] dark:border-white/[0.06] shrink-0">
