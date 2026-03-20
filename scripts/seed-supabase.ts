@@ -44,9 +44,14 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !SEED_USER_ID) {
   process.exit(1);
 }
 
+const DB_SCHEMA = (process.env.NEXT_PUBLIC_DB_SCHEMA ?? 'test') as 'test' | 'prod' | 'public';
+
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
+  db: { schema: DB_SCHEMA },
 });
+
+console.log(`📦 Ziel-Schema: ${DB_SCHEMA}`);
 
 // ── Projektdaten ──────────────────────────────────────────────────────────────
 
