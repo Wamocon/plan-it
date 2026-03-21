@@ -6,7 +6,7 @@ import { TaskStatus, Task, Project } from '@/types';
 import {
   CheckCircle2, Circle, Clock, ChevronDown, ChevronRight,
   ArrowLeft, FolderOpen, Filter, Search, StickyNote,
-  ExternalLink, Trash2, BarChart3, Building2,
+  ExternalLink, Trash2, BarChart3, Building2, LayoutGrid, LayoutList,
 } from 'lucide-react';
 
 // ── Typen ────────────────────────────────────────────────────────────────────
@@ -40,6 +40,7 @@ export default function TasksPage() {
   const [search,       setSearch]       = useState('');
   const [collapsed,    setCollapsed]    = useState<Set<string>>(new Set());
   const [filterOrgId,  setFilterOrgId]  = useState<string | null>(null);
+  const [viewMode,     setViewMode]     = useState<'list' | 'grid'>('list');
 
   useEffect(() => { loadOrganizations(); }, [loadOrganizations]);
 
@@ -269,6 +270,24 @@ export default function TasksPage() {
             </button>
           ))}
         </div>
+
+        {/* View-Toggle */}
+        <div className="flex gap-0.5 border border-white/[0.08] rounded-lg p-0.5 ml-auto">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}
+            title="Listenansicht">
+            <LayoutList size={14} />
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}
+            title="Rasteransicht">
+            <LayoutGrid size={14} />
+          </button>
+        </div>
+
+        </div>
       </div>
 
       {/* Ergebniszahl */}
@@ -276,7 +295,55 @@ export default function TasksPage() {
         <p className="text-xs text-white/30 mb-3">{filtered.length} von {allTasks.length} Aufgaben</p>
       )}
 
-      {/* Gruppe-Liste */}
+      {/* Grid-Ansicht */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map(task => {
+            const cfg = STATUS_CONFIG[task.status];
+            const Icon = cfg.icon;
+            return (
+              <div key={task.id}
+                className={`rounded-xl border border-white/[0.07] p-3 ${cfg.bg} transition-all hover:border-white/[0.15]`}
+                style={{ background: 'rgba(18,6,6,0.7)' }}>
+                <div className="flex items-start gap-2 mb-2">
+                  <button
+                    onClick={() => cycleStatus(task.projectId, task.id, task.status)}
+                    className="mt-0.5 shrink-0 transition-transform hover:scale-110"
+                    title={`Status: ${cfg.label}`}>
+                    <Icon size={15} className={cfg.color} />
+                  </button>
+                  <p className={`text-sm leading-snug flex-1 ${task.status === 'done' ? 'line-through text-white/30' : 'text-white/80'}`}>
+                    {task.item}
+                  </p>
+                  <button
+                    onClick={() => deleteTask(task.projectId, task.id)}
+                    className="shrink-0 text-white/20 hover:text-red-400 transition-colors"
+                    title="Aufgabe löschen">
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 pl-5">
+                  <Link
+                    href={`/project/${task.projectId}`}
+                    className="text-[10px] text-white/30 hover:text-white/55 no-underline inline-flex items-center gap-1">
+                    <FolderOpen size={9} /> {task.projectName}
+                  </Link>
+                  <span className="text-[10px] text-white/25">Wave {task.waveNumber}</span>
+                  {task.jiraIssueKey && (
+                    <a href={task.jiraIssueUrl} target="_blank" rel="noreferrer"
+                      className="text-[10px] text-blue-400/60 hover:text-blue-400 inline-flex items-center gap-1 no-underline">
+                      <ExternalLink size={9} />{task.jiraIssueKey}
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="col-span-full text-center py-10 text-white/30 text-sm">Keine Aufgaben gefunden</div>
+          )}
+        </div>
+      ) : (
       <div className="flex flex-col gap-3">
         {groups.map(group => {
           const isOpen = !collapsed.has(group.key);
@@ -397,6 +464,7 @@ export default function TasksPage() {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
