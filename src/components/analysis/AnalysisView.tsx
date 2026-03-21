@@ -7,6 +7,7 @@ import { RiskHeatmap } from './RiskHeatmap';
 import { ScoreTrend } from './ScoreTrend';
 import { TaskTracker } from './TaskTracker';
 import { ProjectChat } from './ProjectChat';
+import { MaturityRadar } from './MaturityRadar';
 import { useTheme } from '@/components/ui/ThemeProvider';
 
 const scoreStyle = (s: number) =>
@@ -21,7 +22,7 @@ const sev: Record<Severity, { bg: string; border: string; text: string; badge: s
 };
 
 export function AnalysisView({ project }: { project: Project }) {
-  const [tab, setTab] = useState<'ist' | 'risks' | 'heatmap' | 'soll' | 'waves' | 'tasks' | 'trend' | 'chat'>('ist');
+  const [tab, setTab] = useState<'ist' | 'risks' | 'heatmap' | 'soll' | 'waves' | 'timeline' | 'tasks' | 'trend' | 'maturity' | 'chat'>('ist');
   const [reanalyzing, setReanalyzing] = useState(false);
   const [exporting, setExporting] = useState<'pdf' | 'word' | null>(null);
   const updateAnalysis = useAppStore(s => s.updateAnalysis);
@@ -69,14 +70,16 @@ export function AnalysisView({ project }: { project: Project }) {
   };
 
   const tabs = [
-    { id: 'ist' as const,     l: '📋 Ist',                       color: '#fff' },
-    { id: 'risks' as const,   l: `⚠️ Risiken (${risks.length})`,  color: '#ff1a1a' },
-    { id: 'heatmap' as const, l: '🔥 Heatmap',                    color: '#f97316' },
-    { id: 'soll' as const,    l: '🎯 Soll',                        color: '#22aa66' },
-    { id: 'waves' as const,   l: '🌊 Umsetzung',                   color: '#60a5fa' },
-    { id: 'tasks' as const,   l: `✅ Aufgaben${(project.tasks||[]).length > 0 ? ` (${(project.tasks||[]).length})` : ''}`, color: '#a78bfa' },
-    { id: 'trend' as const,   l: '📈 Trend',                       color: '#34d399' },
-    { id: 'chat' as const,    l: '🤖 KI-Chat',                     color: '#c084fc' },
+    { id: 'ist' as const,      l: '📋 Ist',                       color: '#fff' },
+    { id: 'risks' as const,    l: `⚠️ Risiken (${risks.length})`,  color: '#ff1a1a' },
+    { id: 'heatmap' as const,  l: '🔥 Heatmap',                    color: '#f97316' },
+    { id: 'soll' as const,     l: '🎯 Soll',                        color: '#22aa66' },
+    { id: 'waves' as const,    l: '🌊 Umsetzung',                   color: '#60a5fa' },
+    { id: 'timeline' as const, l: '📅 Roadmap',                     color: '#818cf8' },
+    { id: 'maturity' as const, l: '🕸️ Reife',                       color: '#a29bfe' },
+    { id: 'tasks' as const,    l: `✅ Aufgaben${(project.tasks||[]).length > 0 ? ` (${(project.tasks||[]).length})` : ''}`, color: '#a78bfa' },
+    { id: 'trend' as const,    l: '📈 Trend',                       color: '#34d399' },
+    { id: 'chat' as const,     l: '🤖 KI-Chat',                     color: '#c084fc' },
   ];
 
   const istRows: [string, string][] = [
@@ -301,6 +304,70 @@ export function AnalysisView({ project }: { project: Project }) {
 
       {/* Tab: Trend */}
       {tab === 'trend' && <ScoreTrend snapshots={project.snapshots || []} currentScore={score} />}
+
+      {/* Tab: Architektur-Reife Radar */}
+      {tab === 'maturity' && <MaturityRadar data={data} analysis={analysis} />}
+
+      {/* Tab: Timeline / Roadmap (visuelles Gantt) */}
+      {tab === 'timeline' && (
+        <div>
+          <p className="text-[10px] font-bold text-white/25 uppercase tracking-widest mb-3">
+            Umsetzungs-Roadmap · {waves.length} Wellen
+          </p>
+          <div className="space-y-2">
+            {waves.map((w, idx) => {
+              // Dauer in Wochen schätzen aus Strings wie "4 Wochen", "2-3 Monate"
+              const dStr = w.duration.toLowerCase();
+              const monthMatch = dStr.match(/(\d+)\s*[–-]\s*(\d+)\s*monat/);
+              const monthSingle = dStr.match(/(\d+)\s*monat/);
+              const weekRange = dStr.match(/(\d+)\s*[–-]\s*(\d+)\s*woch/);
+              const weekSingle = dStr.match(/(\d+)\s*woch/);
+              const weeks = monthMatch ? (parseInt(monthMatch[1]) + parseInt(monthMatch[2])) / 2 * 4.3
+                : monthSingle ? parseInt(monthSingle[1]) * 4.3
+                : weekRange ? (parseInt(weekRange[1]) + parseInt(weekRange[2])) / 2
+                : weekSingle ? parseInt(weekSingle[1])
+                : 4;
+              const totalWeeks = waves.reduce((s, wv) => {
+                const ds = wv.duration.toLowerCase();
+                const mr = ds.match(/(\d+)\s*[–-]\s*(\d+)\s*monat/); const ms = ds.match(/(\d+)\s*monat/);
+                const wr = ds.match(/(\d+)\s*[–-]\s*(\d+)\s*woch/); const ws = ds.match(/(\d+)\s*woch/);
+                return s + (mr ? (parseInt(mr[1])+parseInt(mr[2]))/2*4.3 : ms ? parseInt(ms[1])*4.3 : wr ? (parseInt(wr[1])+parseInt(wr[2]))/2 : ws ? parseInt(ws[1]) : 4);
+              }, 0);
+              const pct = Math.round((weeks / totalWeeks) * 100);
+              const colors = ['#6366f1','#3b82f6','#0891b2','#059669','#84cc16','#eab308'];
+              const col = colors[idx % colors.length];
+              return (
+                <div key={w.number} className="rounded-lg border border-white/[0.07] overflow-hidden" style={{ background: 'rgba(14,6,6,0.7)' }}>
+                  <div className="px-3 py-2 flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{ background: col }}>
+                      {w.number}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-sm font-bold text-white truncate">{w.title}</span>
+                        <span className="text-[10px] text-white/30 bg-white/5 px-1.5 py-0.5 rounded shrink-0">{w.duration}</span>
+                      </div>
+                      {/* Gantt-Bar */}
+                      <div className="h-3 rounded-full bg-white/[0.05] overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${Math.max(4, pct)}%`, background: `linear-gradient(90deg, ${col}cc, ${col}66)` }} />
+                      </div>
+                      <div className="text-[9px] text-white/20 mt-0.5">{pct}% der Gesamtlaufzeit</div>
+                    </div>
+                  </div>
+                  {/* Items collapsed/inline */}
+                  <div className="border-t border-white/[0.05] px-3 py-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                    {w.items.map((item, j) => (
+                      <span key={j} className="text-[11px] text-white/45 flex items-center gap-1">
+                        <span style={{ color: col }}>▸</span>{item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tab: KI-Chat */}
       {tab === 'chat' && (

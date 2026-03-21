@@ -101,12 +101,11 @@ describe('middleware – Authentifizierungs-Guard', () => {
     expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
-  it('leitet eingeloggten User ohne Schema-Profil auf /auth/login um', async () => {
+  it('lässt eingeloggten User auch ohne Schema-Profil durch (kein Loop)', async () => {
     mockUser = { id: 'user-123' };
     mockProfileRow = null;
     const res = await middleware(makeRequest('/') as never);
-    expect((res as unknown as Record<string, unknown>)._type).toBe('redirect');
-    expect((res as unknown as Record<string, unknown>).destination).toBe('/auth/login');
+    expect((res as unknown as Record<string, unknown>)._type).toBe('next');
   });
 
   it('lässt /auth/login durch ohne Redirect wenn nicht eingeloggt', async () => {
