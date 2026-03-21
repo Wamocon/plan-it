@@ -38,6 +38,24 @@ vi.mock('@/lib/supabase/db', () => ({
   dbGetAllUserProfiles: vi.fn().mockResolvedValue([]),
   dbUpdateUserRole: vi.fn().mockResolvedValue(undefined),
   dbUpdateDisplayName: vi.fn().mockResolvedValue(undefined),
+  // Organisationen
+  dbGetMyOrganizations: vi.fn().mockResolvedValue([]),
+  dbCreateOrganization: vi.fn().mockImplementation(async (org) => ({
+    id: crypto.randomUUID(),
+    name: org.name,
+    slug: org.slug,
+    description: org.description,
+    createdBy: 'user-1',
+    createdAt: new Date().toISOString(),
+  })),
+  dbUpdateOrganization: vi.fn().mockResolvedValue(undefined),
+  dbDeleteOrganization: vi.fn().mockResolvedValue(undefined),
+  dbGetOrgMembers: vi.fn().mockResolvedValue([]),
+  dbAddOrgMember: vi.fn().mockResolvedValue(undefined),
+  dbUpdateOrgMemberRole: vi.fn().mockResolvedValue(undefined),
+  dbRemoveOrgMember: vi.fn().mockResolvedValue(undefined),
+  dbGetOrgProjects: vi.fn().mockResolvedValue([]),
+  dbAssignProjectToOrg: vi.fn().mockResolvedValue(undefined),
 }));
 
 // ── Hilfsobjekte ─────────────────────────────────────────────
@@ -603,6 +621,154 @@ describe('useAppStore', () => {
         provider: 'gemini', label: 'Test', apiKey: 'key', isActive: true,
       });
       expect(config.id).toMatch(UUID_REGEX);
+    });
+  });
+
+  // ────────────────────────────────────────────────────────────
+  // Organisationen
+  // ────────────────────────────────────────────────────────────
+
+  describe('Organisationen', () => {
+    const sampleOrg = { name: 'Acme GmbH', slug: 'acme-gmbh', description: 'Test-Org' };
+
+    beforeEach(() => {
+      useAppStore.setState({ organizations: [], currentOrgMembers: [], currentOrgProjects: [] });
+    });
+
+    it('loadOrganizations() setzt organizations im Store', async () => {
+      await useAppStore.getState().loadOrganizations();
+      // dbGetMyOrganizations ist gemockt und gibt [] zurück
+      expect(useAppStore.getState().organizations).toEqual([]);
+    });
+
+    it('createOrganization() fügt neue Org vorne in die Liste ein', async () => {
+      const org = await useAppStore.getState().createOrganization(sampleOrg);
+      expect(org).not.toBeNull();
+      expect(useAppStore.getState().organizations).toHaveLength(1);
+      expect(useAppStore.getState().organizations[0].name).toBe('Acme GmbH');
+    });
+
+    it('createOrganization() gibt null zurück wenn DB fehlschlägt', async () => {
+      // dbCreateOrganization ist auf null gemockt (Standardverhalten)
+      // Organistation bereits auf null gesetzt via Mock – prüfe null-Pfad im Store
+      const { dbCreateOrganization } = await import('@/lib/supabase/db');
+      (dbCreateOrganization as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+      const org = await useAppStore.getState().createOrganization(sampleOrg);
+      expect(org).toBeNull();
+      expect(useAppStore.getState().organizations).toHaveLength(0);
+    });
+
+    it('updateOrganization() aktualisiert Name und Description im Store', async () => {
+      const org = await useAppStore.getState().createOrganization(sampleOrg);
+      await useAppStore.getState().updateOrganization(org!.id, { name: 'Neuer Name' });
+      expect(useAppStore.getState().organizations[0].name).toBe('Neuer Name');
+    });
+
+    it('updateOrganization() lässt andere Orgs unberührt', async () => {
+      await useAppStore.getState().createOrganization({ name: 'Org A', slug: 'org-a' });
+      vi.advanceTimersByTime(1);
+      const orgB = await useAppStore.getState().createOrganization({ name: 'Org B', slug: 'org-b' });
+      await useAppStore.getState().updateOrganization(orgB!.id, { name: 'Org B neu' });
+      expect(useAppStore.getState().organizations.find(o => o.name === 'Org A')).toBeDefined();
+    });
+
+    it('deleteOrganization() entfernt die Org aus dem Store', async () => {
+      const org = await useAppStore.getState().createOrganization(sampleOrg);
+      await useAppStore.getState().deleteOrganization(org!.id);
+      expect(useAppStore.getState().organizations).toHaveLength(0);
+    });
+
+    it('deleteOrganization() lässt andere Orgs unberührt', async () => {
+      const orgA = await useAppStore.getState().createOrganization({ name: 'A', slug: 'a' });
+      vi.advanceTimersByTime(1);
+      await useAppStore.getState().createOrganization({ name: 'B', slug: 'b' });
+      await useAppStore.getState().deleteOrganization(orgA!.id);
+      expect(useAppStore.getState().organizations).toHaveLength(1);
+      expect(useAppStore.getState().organizations[0].name).toBe('B');
+    });
+
+    it('loadOrgMembers() setzt currentOrgMembers', async () => {
+      await useAppStore.getState().loadOrgMembers('org-1');
+      expect(useAppStore.getState().currentOrgMembers).toEqual([]);
+    });
+
+    it('updateOrgMemberRole() aktualisiert Rolle im currentOrgMembers', async () => {
+      useAppStore.setState({
+        currentOrgMembers: [
+          { id: 'm1', orgId: 'org-1', userId: 'u1', role: 'member', createdAt: '' },
+          { id: 'm2', orgId: 'org-1', userId: 'u2', role: 'member', createdAt: '' },
+        ],
+      });
+      await useAppStore.getState().updateOrgMemberRole('org-1', 'u1', 'admin');
+      const m = useAppStore.getState().currentOrgMembers.find(m => m.userId === 'u1');
+      expect(m?.role).toBe('admin');
+    });
+
+    it('updateOrgMemberRole() lässt andere Mitglieder unberührt', async () => {
+      useAppStore.setState({
+        currentOrgMembers: [
+          { id: 'm1', orgId: 'org-1', userId: 'u1', role: 'member', createdAt: '' },
+          { id: 'm2', orgId: 'org-1', userId: 'u2', role: 'member', createdAt: '' },
+        ],
+      });
+      await useAppStore.getState().updateOrgMemberRole('org-1', 'u1', 'admin');
+      const m2 = useAppStore.getState().currentOrgMembers.find(m => m.userId === 'u2');
+      expect(m2?.role).toBe('member');
+    });
+
+    it('removeOrgMember() entfernt das Mitglied aus currentOrgMembers', async () => {
+      useAppStore.setState({
+        currentOrgMembers: [
+          { id: 'm1', orgId: 'org-1', userId: 'u1', role: 'owner', createdAt: '' },
+        ],
+      });
+      await useAppStore.getState().removeOrgMember('org-1', 'u1');
+      expect(useAppStore.getState().currentOrgMembers).toHaveLength(0);
+    });
+
+    it('loadOrgProjects() setzt currentOrgProjects', async () => {
+      await useAppStore.getState().loadOrgProjects('org-1');
+      expect(useAppStore.getState().currentOrgProjects).toEqual([]);
+    });
+
+    it('assignProjectToOrg() setzt orgId am Projekt im lokalen State', async () => {
+      const project = useAppStore.getState().addProject(sampleData, sampleAnalysis);
+      await useAppStore.getState().assignProjectToOrg(project.id, 'org-1');
+      expect(useAppStore.getState().getProject(project.id)?.orgId).toBe('org-1');
+    });
+
+    it('assignProjectToOrg() mit null entfernt orgId vom Projekt', async () => {
+      const project = useAppStore.getState().addProject({ ...sampleData }, sampleAnalysis);
+      useAppStore.setState({
+        projects: useAppStore.getState().projects.map(p =>
+          p.id === project.id ? { ...p, orgId: 'org-1' } : p
+        ),
+      });
+      await useAppStore.getState().assignProjectToOrg(project.id, null);
+      expect(useAppStore.getState().getProject(project.id)?.orgId).toBeUndefined();
+    });
+
+    it('getMyOrgRole() gibt null zurück wenn kein Profil geladen', () => {
+      useAppStore.setState({ userProfile: null });
+      expect(useAppStore.getState().getMyOrgRole('org-1')).toBeNull();
+    });
+
+    it('getMyOrgRole() gibt die Rolle des aktuellen Users zurück', () => {
+      useAppStore.setState({
+        userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'user', createdAt: '' },
+        currentOrgMembers: [
+          { id: 'm1', orgId: 'org-1', userId: 'u1', role: 'admin', createdAt: '' },
+        ],
+      });
+      expect(useAppStore.getState().getMyOrgRole('org-1')).toBe('admin');
+    });
+
+    it('getMyOrgRole() gibt null zurück wenn User kein Mitglied ist', () => {
+      useAppStore.setState({
+        userProfile: { id: '1', userId: 'u1', email: 'a@b.de', role: 'user', createdAt: '' },
+        currentOrgMembers: [],
+      });
+      expect(useAppStore.getState().getMyOrgRole('org-1')).toBeNull();
     });
   });
 });
