@@ -44,7 +44,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── Profil-Prüfung: User muss im aktuellen Schema registriert sein ──
+  // ── Profil-Prüfung (Rolle für Admin-Routen ermitteln) ────────────────────
+  // Kein Profil = noch nicht vollständig registriert → zurück zum Login.
+  // (Die Session-Route erstellt das Profil per upsert direkt nach dem Login.)
   const { data: ownProfile } = await supabase
     .from('user_profiles')
     .select('role')
@@ -52,7 +54,6 @@ export async function middleware(request: NextRequest) {
     .single();
 
   if (!ownProfile) {
-    // Kein Profil im aktuellen Schema → kein Zugriff
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/auth/login';
     return NextResponse.redirect(loginUrl);
@@ -61,7 +62,6 @@ export async function middleware(request: NextRequest) {
   // ── Admin-Routen: nur für Admins ──────────────────────────
   if (pathname.startsWith('/admin')) {
     if (ownProfile.role !== 'admin') {
-      // Kein Admin → zur Startseite umleiten
       const homeUrl = request.nextUrl.clone();
       homeUrl.pathname = '/';
       return NextResponse.redirect(homeUrl);

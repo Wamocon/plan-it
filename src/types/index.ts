@@ -105,6 +105,38 @@ export interface Project {
   tasks?: Task[];
   chatHistory?: ChatMessage[];
   snapshots?: AnalysisSnapshot[];
+  /** ID der zugeordneten Organisation (optional) */
+  orgId?: string;
 }
 export interface WizardField { key: string; label: string; type: 'text' | 'select' | 'multi'; placeholder?: string; options?: [string, string][]; allowCustom?: boolean; customKey?: string; showWhen?: (data: WizardData) => boolean; }
 export interface WizardStep { id: string; title: string; icon: string; fields: WizardField[]; }
+
+// ── Organisations-Modul ──────────────────────────────────────
+export type OrgRole = 'owner' | 'admin' | 'member';
+
+export const ORG_ROLE_LABELS: Record<OrgRole, string> = {
+  owner:  'Eigentümer',
+  admin:  'Administrator',
+  member: 'Mitglied',
+};
+
+export interface Organization {
+  id:          string;
+  name:        string;
+  slug:        string;
+  description?: string;
+  createdBy:   string;
+  createdAt:   string;
+}
+
+export interface OrgMember {
+  id:        string;
+  orgId:     string;
+  userId:    string;
+  role:      OrgRole;
+  createdAt: string;
+  /** Anzeigename aus user_profiles (optional, per JOIN) */
+  displayName?: string;
+  /** E-Mail aus user_profiles (optional, per JOIN) */
+  email?: string;
+}

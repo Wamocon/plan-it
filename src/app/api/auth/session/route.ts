@@ -34,12 +34,18 @@ export async function POST(request: NextRequest) {
     if (mode === 'register') {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-      // Reuse same response object (cookies already attached by setAll)
       return NextResponse.json({ ok: true, registered: true }, { headers: response.headers });
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+
+    // Profil anlegen falls noch nicht vorhanden (Accounts vor der Rollen-Migration)
+    if (signInData.user) {
+      await supabase
+        .from('user_profiles')
+        .upsert({ user_id: signInData.user.id, role: 'user' }, { onConflict: 'user_id', ignoreDuplicates: true });
+    }
 
     return response; // session cookies set in headers by setAll()
   } catch (err: unknown) {

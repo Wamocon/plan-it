@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Project, WizardData, AnalysisResult, Task, TaskStatus, ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig, UserProfile, UserRole, USER_ROLE_HIERARCHY } from '@/types';
+import { Project, WizardData, AnalysisResult, Task, TaskStatus, ChatMessage, AnalysisSnapshot, JiraConfig, AiConfig, UserProfile, UserRole, USER_ROLE_HIERARCHY, Organization, OrgMember, OrgRole } from '@/types';
 import {
   loadAllData,
   dbAddProject, dbUpdateAnalysis, dbSetAiPending, dbSetAiFailReason, dbDeleteProject,
@@ -10,6 +10,9 @@ import {
   dbAddJiraConfig, dbUpdateJiraConfig, dbDeleteJiraConfig,
   dbAddAiConfig, dbUpdateAiConfig, dbDeleteAiConfig, dbSetActiveAiConfig,
   dbGetUserProfile, dbGetAllUserProfiles, dbUpdateUserRole, dbUpdateDisplayName,
+  dbGetMyOrganizations, dbCreateOrganization, dbUpdateOrganization, dbDeleteOrganization,
+  dbGetOrgMembers, dbAddOrgMember, dbUpdateOrgMemberRole, dbRemoveOrgMember,
+  dbGetOrgProjects, dbAssignProjectToOrg,
 } from '@/lib/supabase/db';
 
 interface AppStore {
@@ -57,6 +60,21 @@ interface AppStore {
   hasMinRole: (minRole: UserRole) => boolean;
   /** Gibt true zurück, wenn der aktuelle User exakt eine der angegebenen Rollen hat. */
   hasRole: (...roles: UserRole[]) => boolean;
+  // ── Organisationen ──
+  organizations: Organization[];
+  currentOrgMembers: OrgMember[];
+  currentOrgProjects: Project[];
+  loadOrganizations: () => Promise<void>;
+  createOrganization: (org: Omit<Organization, 'id' | 'createdAt' | 'createdBy'>) => Promise<Organization | null>;
+  updateOrganization: (id: string, patch: Partial<Pick<Organization, 'name' | 'description'>>) => Promise<void>;
+  deleteOrganization: (id: string) => Promise<void>;
+  loadOrgMembers: (orgId: string) => Promise<void>;
+  addOrgMember: (orgId: string, userId: string, role?: OrgRole) => Promise<void>;
+  updateOrgMemberRole: (orgId: string, userId: string, role: OrgRole) => Promise<void>;
+  removeOrgMember: (orgId: string, userId: string) => Promise<void>;
+  loadOrgProjects: (orgId: string) => Promise<void>;
+  assignProjectToOrg: (projectId: string, orgId: string | null) => Promise<void>;
+  getMyOrgRole: (orgId: string) => OrgRole | null;
 }
 
 export const useAppStore = create<AppStore>()(
@@ -287,15 +305,98 @@ export const useAppStore = create<AppStore>()(
         if (!role) return false;
         return roles.includes(role);
       },
+
+      // ── Organisationen ──
+      organizations: [],
+      currentOrgMembers: [],
+      currentOrgProjects: [],
+
+      loadOrganizations: async () => {
+        const orgs = await dbGetMyOrganizations();
+        set({ organizations: orgs });
+      },
+
+      createOrganization: async (org) => {
+        const created = await dbCreateOrganization(org);
+        if (created) set(state => ({ organizations: [created, ...state.organizations] }));
+        return created;
+      },
+
+      updateOrganization: async (id, patch) => {
+        await dbUpdateOrganization(id, patch);
+        set(state => ({
+          organizations: state.organizations.map(o => o.id === id ? { ...o, ...patch } : o),
+        }));
+      },
+
+      deleteOrganization: async (id) => {
+        await dbDeleteOrganization(id);
+        set(state => ({ organizations: state.organizations.filter(o => o.id !== id) }));
+      },
+
+      loadOrgMembers: async (orgId) => {
+        const members = await dbGetOrgMembers(orgId);
+        set({ currentOrgMembers: members });
+      },
+
+      addOrgMember: async (orgId, userId, role = 'member') => {
+        await dbAddOrgMember(orgId, userId, role);
+        const members = await dbGetOrgMembers(orgId);
+        set({ currentOrgMembers: members });
+      },
+
+      updateOrgMemberRole: async (orgId, userId, role) => {
+        await dbUpdateOrgMemberRole(orgId, userId, role);
+        set(state => ({
+          currentOrgMembers: state.currentOrgMembers.map(m =>
+            m.orgId === orgId && m.userId === userId ? { ...m, role } : m
+          ),
+        }));
+      },
+
+      removeOrgMember: async (orgId, userId) => {
+        await dbRemoveOrgMember(orgId, userId);
+        set(state => ({
+          currentOrgMembers: state.currentOrgMembers.filter(m => !(m.orgId === orgId && m.userId === userId)),
+        }));
+      },
+
+      loadOrgProjects: async (orgId) => {
+        const projects = await dbGetOrgProjects(orgId);
+        set({ currentOrgProjects: projects });
+      },
+
+      assignProjectToOrg: async (projectId, orgId) => {
+        await dbAssignProjectToOrg(projectId, orgId);
+        // Lokalen State aktualisieren (für Dashboard-Badge + Filter)
+        set(state => ({
+          projects: state.projects.map(p =>
+            p.id === projectId ? { ...p, orgId: orgId ?? undefined } : p
+          ),
+        }));
+        // currentOrgProjects neu laden falls eine Org geöffnet ist
+        if (orgId) {
+          const projects = await dbGetOrgProjects(orgId);
+          set({ currentOrgProjects: projects });
+        }
+      },
+
+      getMyOrgRole: (orgId) => {
+        const userId = get().userProfile?.userId;
+        if (!userId) return null;
+        const member = get().currentOrgMembers.find(m => m.orgId === orgId && m.userId === userId);
+        return member?.role ?? null;
+      },
     }),
     {
       name: `plan-it-store-${process.env.NEXT_PUBLIC_DB_SCHEMA ?? 'public'}`,
       // userProfile und allUserProfiles werden nie gecacht – immer frisch von Supabase geladen.
       // Verhindert Race-Condition zwischen Persist-Rehydrierung und loadUserProfile().
       partialize: (state) => ({
-        projects:     state.projects,
-        jiraConfigs:  state.jiraConfigs,
-        aiConfigs:    state.aiConfigs,
+        projects:      state.projects,
+        jiraConfigs:   state.jiraConfigs,
+        aiConfigs:     state.aiConfigs,
+        organizations: state.organizations,
       }),
     }
   )

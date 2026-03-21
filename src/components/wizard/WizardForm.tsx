@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { wizardSteps } from '@/lib/wizard-steps';
@@ -15,8 +15,14 @@ export function WizardForm() {
   const setAiPending = useAppStore(s => s.setAiPending);
   const setAiFailReason = useAppStore(s => s.setAiFailReason);
   const getActiveAiConfig = useAppStore(s => s.getActiveAiConfig);
+  const organizations = useAppStore(s => s.organizations);
+  const loadOrganizations = useAppStore(s => s.loadOrganizations);
+  const assignProjectToOrg = useAppStore(s => s.assignProjectToOrg);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardData>({});
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
+
+  useEffect(() => { loadOrganizations(); }, [loadOrganizations]);
 
   const current = wizardSteps[step];
   const visibleFields = current.fields.filter(f => !f.showWhen || f.showWhen(data));
@@ -36,6 +42,10 @@ export function WizardForm() {
 
     const { fallbackAnalysis } = await import('@/lib/fallback-analysis');
     const project = addProject(data, fallbackAnalysis(data));
+
+    if (selectedOrgId) {
+      void assignProjectToOrg(project.id, selectedOrgId);
+    }
 
     if (activeAiConfig) {
       setAiPending(project.id, true);
@@ -86,6 +96,23 @@ export function WizardForm() {
 
       <h2 className="text-xl font-bold text-white mb-0.5">{current.icon} {current.title}</h2>
       <p className="text-white/40 text-sm mb-5">Schritt {step + 1} von {wizardSteps.length}</p>
+
+      {/* Org-Zuweisung auf letztem Schritt */}
+      {isLast && organizations.length > 0 && (
+        <div className="mb-5">
+          <label className="block text-xs font-bold text-white/50 uppercase tracking-widest mb-1.5">Organisation (optional)</label>
+          <select
+            value={selectedOrgId}
+            onChange={e => setSelectedOrgId(e.target.value)}
+            className="w-full px-3 py-2.5 rounded-lg text-sm"
+          >
+            <option value="">Keine Organisation</option>
+            {organizations.map(org => (
+              <option key={org.id} value={org.id}>{org.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Hinweis wenn kein API-Key konfiguriert */}
       {isLast && !activeAiConfig && (

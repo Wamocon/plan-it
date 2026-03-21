@@ -3,11 +3,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
 import { useTheme } from '@/components/ui/ThemeProvider';
-import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList, ShieldCheck, Sun, Moon, BookOpen } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings, FolderOpen, GitCompare, X, ClipboardList, ShieldCheck, Sun, Moon, BookOpen, Building2 } from 'lucide-react';
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const projects    = useAppStore(s => s.projects);
+  const organizations = useAppStore(s => s.organizations);
   const userProfile = useAppStore(s => s.userProfile);
   const isAdmin     = userProfile?.role === 'admin';
   const { theme, setTheme } = useTheme();
@@ -17,6 +18,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const navItems = [
     { href: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
     { href: '/wizard', icon: PlusCircle, label: 'Neues Projekt', exact: true },
+    { href: '/organizations', icon: Building2, label: 'Organisationen', exact: false },
     { href: '/tasks', icon: ClipboardList, label: 'Aufgabensteuerung', exact: true },
     { href: '/compare', icon: GitCompare, label: 'Vergleich', exact: true },
     { href: '/rules', icon: BookOpen, label: 'Regelwerk', exact: true },
@@ -63,6 +65,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               {item.href === '/' && projects.length > 0 && (
                 <span className="ml-auto text-[9px] font-bold bg-black/5 dark:bg-white/8 text-gray-400 dark:text-white/35 px-1.5 py-0.5 rounded-full">
                   {projects.length}
+                </span>
+              )}
+              {item.href === '/organizations' && organizations.length > 0 && (
+                <span className="ml-auto text-[9px] font-bold bg-black/5 dark:bg-white/8 text-gray-400 dark:text-white/35 px-1.5 py-0.5 rounded-full">
+                  {organizations.length}
                 </span>
               )}
               {item.href === '/tasks' && openTaskCount > 0 && (
@@ -219,7 +226,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () =>
     <>
       {/* Desktop sidebar */}
       <aside
-        className="hidden md:flex flex-col w-52 shrink-0 border-r border-white/[0.06] dark:border-white/[0.06]"
+        className="hidden md:flex flex-col w-52 shrink-0 overflow-hidden border-r border-white/[0.06] dark:border-white/[0.06]"
         style={{ background: sidebarBgDesktop }}
       >
         <SidebarContent />
