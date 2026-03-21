@@ -7,10 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --reporter=verbose --reporter=junit --reporter=json --coverage --outputFile.junit=test-results/junit.xml --outputFile.json=test-results/results.json",
     "test:ui": "vitest --ui",
+    "validate": "npm run typecheck && npm run lint && npm run test",
     "seed:supabase": "npx tsx scripts/seed-supabase.ts"
   },
   "dependencies": {

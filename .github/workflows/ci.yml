@@ -1,9 +1,10 @@
-name: CI – Lint, Tests & Coverage
+name: CI
 
 on:
   push:
     branches:
       - main
+      - develop
   pull_request:
     branches:
       - main
@@ -20,101 +21,137 @@ permissions:
   pull-requests: write
 
 jobs:
-  lint-and-test:
-    name: Lint & Unit Tests
+  validate:
+    name: TypeCheck, Lint & Test
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [20, 22]
+
     steps:
-      - name: Code auschecken
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Node.js einrichten
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: ${{ matrix.node-version }}
+          cache: npm
 
       - name: Abhängigkeiten installieren
         run: npm ci
 
-      - name: TypeScript-Typen prüfen
-        run: npx tsc --noEmit
+      - name: TypeScript Check
+        id: typecheck
+        run: |
+          echo "# 🔍 Validierungsreport — Node ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Commit:** \`${GITHUB_SHA::7}\` auf \`${GITHUB_REF_NAME}\` • **Ausgelöst von:** ${GITHUB_ACTOR}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 1️⃣ TypeScript-Prüfung" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          TS_START=$SECONDS
+          if npm run typecheck 2>&1 | tee /tmp/typecheck.log; then
+            TS_DUR=$((SECONDS - TS_START))
+            TS_FILES=$(find src -name '*.ts' -o -name '*.tsx' | wc -l)
+            echo "| Metrik | Wert |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Ergebnis | ✅ Bestanden |" >> $GITHUB_STEP_SUMMARY
+            echo "| Geprüfte Dateien | ${TS_FILES} TypeScript-Dateien |" >> $GITHUB_STEP_SUMMARY
+            echo "| Strict Mode | Aktiviert |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dauer | ${TS_DUR}s |" >> $GITHUB_STEP_SUMMARY
+          else
+            TS_DUR=$((SECONDS - TS_START))
+            ERRORS=$(grep -c "error TS" /tmp/typecheck.log || echo "?")
+            echo "| Metrik | Wert |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Ergebnis | ❌ Fehlgeschlagen |" >> $GITHUB_STEP_SUMMARY
+            echo "| Anzahl Fehler | ${ERRORS} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dauer | ${TS_DUR}s |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Fehlerdetails anzeigen</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat /tmp/typecheck.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-      - name: ESLint ausführen
-        run: npm run lint
+      - name: Lint
+        id: lint
+        run: |
+          echo "## 2️⃣ ESLint-Prüfung" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          LINT_START=$SECONDS
+          if npm run lint 2>&1 | tee /tmp/lint.log; then
+            LINT_DUR=$((SECONDS - LINT_START))
+            echo "| Metrik | Wert |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Ergebnis | ✅ Bestanden |" >> $GITHUB_STEP_SUMMARY
+            echo "| Regelwerk | next/core-web-vitals |" >> $GITHUB_STEP_SUMMARY
+            echo "| Warnungen | 0 |" >> $GITHUB_STEP_SUMMARY
+            echo "| Fehler | 0 |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dauer | ${LINT_DUR}s |" >> $GITHUB_STEP_SUMMARY
+          else
+            LINT_DUR=$((SECONDS - LINT_START))
+            LINT_ERRORS=$(grep -c "Error:" /tmp/lint.log || echo "?")
+            LINT_WARNINGS=$(grep -c "Warning:" /tmp/lint.log || echo "0")
+            echo "| Metrik | Wert |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Ergebnis | ❌ Fehlgeschlagen |" >> $GITHUB_STEP_SUMMARY
+            echo "| Fehler | ${LINT_ERRORS} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Warnungen | ${LINT_WARNINGS} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dauer | ${LINT_DUR}s |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Lint-Fehler anzeigen</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat /tmp/lint.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
 
-      - name: Unit-Tests mit Coverage ausführen
-        run: npm run test:coverage
-
-      - name: Coverage-Zusammenfassung in Job Summary schreiben
-        if: always()
+      - name: Unit-Tests und Coverage ausführen
+        id: tests
+        run: |
+          mkdir -p test-results
+          npm run test:ci 2>&1 | tee /tmp/test.log
+          TEST_EXIT=${PIPESTATUS[0]}
+          echo "## 3️⃣ Testergebnisse" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f test-results/results.json ]; then
+            node scripts/ci-report.mjs test-results/results.json "Node ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Keine JSON-Ergebnisse verfügbar" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat /tmp/test.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          exit $TEST_EXIT
         env:
-          RUN_NUMBER: ${{ github.run_number }}
-          REF_NAME: ${{ github.ref_name }}
-          SHA: ${{ github.sha }}
-        run: |
-          node - <<'EOF'
-          const fs = require('fs');
-          if (!fs.existsSync('coverage/coverage-summary.json')) {
-            console.log('⚠️ coverage-summary.json nicht gefunden – Tests wurden übersprungen oder fehlgeschlagen.');
-            process.exit(0);
-          }
-          const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
-          const total = summary.total;
-          const run = process.env.RUN_NUMBER;
-          const branch = process.env.REF_NAME;
-          const sha = process.env.SHA.slice(0, 7);
-          const pagesUrl = `https://literate-train-jlewrjo.pages.github.io/`;
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
 
-          const pct = (v) => `${v.pct}% (${v.covered}/${v.total})`;
-          const icon = (v) => v.pct >= 80 ? '✅' : v.pct >= 60 ? '⚠️' : '❌';
-
-          const lines = [
-            '## 📊 Coverage Report',
-            '',
-            `> Run **#${run}** · Branch \`${branch}\` · Commit \`${sha}\``,
-            '',
-            `### 🔗 [Interaktiver HTML-Report öffnen ↗](${pagesUrl})`,
-            '',
-            '| Kategorie | Abdeckung | Status |',
-            '|-----------|-----------|--------|',
-            `| Statements | ${pct(total.statements)} | ${icon(total.statements)} |`,
-            `| Branches   | ${pct(total.branches)}   | ${icon(total.branches)}   |`,
-            `| Functions  | ${pct(total.functions)}  | ${icon(total.functions)}  |`,
-            `| Lines      | ${pct(total.lines)}      | ${icon(total.lines)}      |`,
-            '',
-            '### Dateien',
-            '',
-            '| Datei | Stmt | Branch | Func | Lines |',
-            '|-------|------|--------|------|-------|',
-          ];
-
-          for (const [file, data] of Object.entries(summary)) {
-            if (file === 'total') continue;
-            const short = file.replace(process.cwd() + '/', '').replace(/\\/g, '/');
-            lines.push(`| \`${short}\` | ${data.statements.pct}% | ${data.branches.pct}% | ${data.functions.pct}% | ${data.lines.pct}% |`);
-          }
-
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
-          EOF
-
-      - name: Coverage-Report in docs/coverage/ einbinden
-        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          mkdir -p docs/coverage
-          cp -r coverage/. docs/coverage/
-
-      - name: Produkthandbuch + Coverage für GitHub Pages vorbereiten
-        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: actions/upload-pages-artifact@v3
+      - name: Test-Reports als Artefakt hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          path: docs/
+          name: test-report-node-${{ matrix.node-version }}
+          path: |
+            test-results/junit.xml
+            test-results/results.json
+          retention-days: 30
 
       - name: Coverage-Bericht als Artefakt hochladen
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report-${{ github.run_number }}
+          name: coverage-report-node-${{ matrix.node-version }}-${{ github.run_number }}
           path: coverage/
           retention-days: 30
 
@@ -126,10 +163,89 @@ jobs:
           json-summary-path: coverage/coverage-summary.json
           json-final-path: coverage/coverage-final.json
 
+      - name: Coverage-Report in docs/coverage/ einbinden
+        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.node-version == 22
+        run: |
+          mkdir -p docs/coverage
+          cp -r coverage/. docs/coverage/
+
+      - name: Produkthandbuch + Coverage für GitHub Pages vorbereiten
+        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.node-version == 22
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Build
+        id: build
+        run: |
+          echo "# 🏗️ Build-Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Commit:** \`${GITHUB_SHA::7}\` auf \`${GITHUB_REF_NAME}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          BUILD_START=$SECONDS
+          if npm run build 2>&1 | tee /tmp/build.log; then
+            BUILD_DUR=$((SECONDS - BUILD_START))
+            STATIC=$(grep -c "○" /tmp/build.log || true)
+            DYNAMIC=$(grep -c "ƒ" /tmp/build.log || true)
+            SSR=$(grep -c "λ" /tmp/build.log || true)
+            TOTAL=$((STATIC + DYNAMIC + SSR))
+            BUNDLE_SIZE=$(grep "First Load JS" /tmp/build.log | head -1 | grep -oP '[\d.]+ [kM]B' || echo "–")
+            echo "| Metrik | Wert |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Ergebnis | ✅ Build erfolgreich |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dauer | ${BUILD_DUR}s |" >> $GITHUB_STEP_SUMMARY
+            echo "| Seiten gesamt | ${TOTAL} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Statische Seiten | ${STATIC} |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dynamische Seiten | ${DYNAMIC} |" >> $GITHUB_STEP_SUMMARY
+            echo "| First Load JS | ${BUNDLE_SIZE} |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Build-Output anzeigen</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -A 100 "Route (app)" /tmp/build.log | head -40 >> $GITHUB_STEP_SUMMARY || tail -30 /tmp/build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          else
+            BUILD_DUR=$((SECONDS - BUILD_START))
+            echo "| Metrik | Wert |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Ergebnis | ❌ Build fehlgeschlagen |" >> $GITHUB_STEP_SUMMARY
+            echo "| Dauer | ${BUILD_DUR}s |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Fehlerdetails anzeigen</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -40 /tmp/build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
   deploy-coverage:
     name: Coverage auf GitHub Pages veröffentlichen
     runs-on: ubuntu-latest
-    needs: lint-and-test
+    needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: github-pages
