@@ -1,8 +1,10 @@
 name: Deploy to Vercel
 
 on:
-  # Merge in main → Test-Umgebung (Vercel Preview, Schema: test)
-  push:
+  # Test-Deployment erst nachdem der CI-Workflow auf main erfolgreich war
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches:
       - main
   # Neues Release → Prod-Umgebung (Vercel Production, Schema: prod)
@@ -10,14 +12,16 @@ on:
     types: [published]
 
 jobs:
-  # ── Test-Deployment bei Merge in main ───────────────────────
+  # ── Test-Deployment – nur wenn CI grün war ───────────────────
   deploy-test:
     name: Deploy Test-Umgebung (Schema test)
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Code auschecken
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Deploy → Vercel Preview (test)
         uses: amondnet/vercel-action@v25
@@ -35,13 +39,46 @@ jobs:
         run: |
           echo "✅ Test-Deployment abgeschlossen"
           echo "Schema:  test"
-          echo "Commit:  ${{ github.sha }}"
-          echo "Branch:  ${{ github.ref_name }}"
+          echo "Commit:  ${{ github.event.workflow_run.head_sha }}"
+          echo "Branch:  main"
+
+  # ── Validierung vor Prod-Deployment ─────────────────────────
+  validate-prod:
+    name: Validierung vor Prod-Deployment
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release-Tag auschecken
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: TypeScript-Prüfung
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit-Tests
+        run: npm run test
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
 
   # ── Prod-Deployment bei neuem Release ───────────────────────
   deploy-prod:
     name: Deploy Prod-Umgebung (Schema prod)
     if: github.event_name == 'release'
+    needs: validate-prod
     runs-on: ubuntu-latest
     steps:
       - name: Release-Tag auschecken
