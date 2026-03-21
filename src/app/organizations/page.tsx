@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/appStore';
-import { Building2, Plus, Users, FolderOpen, ChevronRight, Loader2, X } from 'lucide-react';
+import { Building2, Plus, Users, FolderOpen, ChevronRight, Loader2, X, LayoutGrid, LayoutList } from 'lucide-react';
 import { useTheme } from '@/components/ui/ThemeProvider';
 
 function slugify(name: string): string {
@@ -27,6 +27,7 @@ export default function OrganizationsPage() {
   const [creating, setCreating]     = useState(false);
   const [form, setForm] = useState({ name: '', slug: '', description: '' });
   const [error, setError] = useState('');
+  const [viewMode, setViewMode]     = useState<'grid' | 'list'>('list');
 
   useEffect(() => {
     loadOrganizations().finally(() => setLoading(false));
@@ -68,13 +69,29 @@ export default function OrganizationsPage() {
             <p className="text-sm text-gray-400 dark:text-white/40">Unternehmen, Teams und Mitglieder verwalten</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#ff1a1a] text-white text-sm font-semibold hover:bg-[#e51515] transition-colors"
-        >
-          <Plus size={14} />
-          Neue Organisation
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-0.5 border rounded-lg p-0.5" style={{ borderColor }}>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/60'}`}
+              title="Rasteransicht">
+              <LayoutGrid size={14} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white' : 'text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/60'}`}
+              title="Listenansicht">
+              <LayoutList size={14} />
+            </button>
+          </div>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#ff1a1a] text-white text-sm font-semibold hover:bg-[#e51515] transition-colors"
+          >
+            <Plus size={14} />
+            Neue Organisation
+          </button>
+        </div>
       </div>
 
       {/* Create Modal */}
@@ -169,6 +186,39 @@ export default function OrganizationsPage() {
             <Plus size={14} />
             Jetzt erstellen
           </button>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {organizations.map(org => (
+            <button
+              key={org.id}
+              onClick={() => router.push(`/organizations/${org.id}`)}
+              className="flex flex-col gap-3 p-5 rounded-2xl border text-left hover:border-[#ff1a1a]/30 transition-all group"
+              style={{ background: cardBg, borderColor }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#ff1a1a]/10 flex items-center justify-center">
+                  <Building2 size={18} className="text-[#ff1a1a]" />
+                </div>
+                <ChevronRight size={15} className="text-gray-300 dark:text-white/20 group-hover:text-[#ff1a1a]/60 transition-colors mt-0.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-bold text-gray-900 dark:text-white truncate">{org.name}</div>
+                {org.description && (
+                  <div className="text-xs text-gray-400 dark:text-white/35 line-clamp-2 mt-0.5">{org.description}</div>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-auto pt-2 border-t" style={{ borderColor }}>
+                <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-white/30">
+                  <Users size={9} /> Mitglieder
+                </span>
+                <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-white/30">
+                  <FolderOpen size={9} /> Projekte
+                </span>
+                <span className="font-mono text-[10px] text-gray-300 dark:text-white/15 ml-auto truncate">{org.slug}</span>
+              </div>
+            </button>
+          ))}
         </div>
       ) : (
         <div className="flex flex-col gap-3">

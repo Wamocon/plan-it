@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { LayoutGrid, LayoutList } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 export default function DashboardPage() {
@@ -16,6 +17,7 @@ export default function DashboardPage() {
   const [assignModal, setAssignModal]     = useState<{ projectId: string; current: string | undefined } | null>(null);
   const [assignOrgId, setAssignOrgId]     = useState<string>('');
   const [assigning, setAssigning]         = useState(false);
+  const [viewMode, setViewMode]           = useState<'grid' | 'list'>('grid');
 
   useEffect(() => { loadOrganizations(); }, [loadOrganizations]);
 
@@ -52,11 +54,27 @@ export default function DashboardPage() {
           <h2 className="text-2xl font-black text-white leading-tight">Projekte</h2>
           <p className="text-white/35 text-sm mt-0.5">{projects.length} Projekt{projects.length !== 1 ? 'e' : ''} gespeichert</p>
         </div>
-        <Link href="/wizard"
-          className="bg-[#ff1a1a] text-white px-5 py-2.5 rounded-xl font-bold text-sm no-underline hover:opacity-90 transition-opacity"
-          style={{ boxShadow: '0 4px 18px rgba(255,26,26,0.3)' }}>
-          + Neues Projekt
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-0.5 border border-white/[0.08] rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}
+              title="Rasteransicht">
+              <LayoutGrid size={14} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}
+              title="Listenansicht">
+              <LayoutList size={14} />
+            </button>
+          </div>
+          <Link href="/wizard"
+            className="bg-[#ff1a1a] text-white px-5 py-2.5 rounded-xl font-bold text-sm no-underline hover:opacity-90 transition-opacity"
+            style={{ boxShadow: '0 4px 18px rgba(255,26,26,0.3)' }}>
+            + Neues Projekt
+          </Link>
+        </div>
       </div>
 
       {/* Org-Filter */}
@@ -128,6 +146,75 @@ export default function DashboardPage() {
               Jetzt starten
             </Link>
           )}
+        </div>
+      ) : viewMode === 'list' ? (
+        <div className="flex flex-col gap-2">
+          {visibleProjects.map(p => {
+            const hi = p.analysis.risks.filter(r => r.severity === 'high').length;
+            const mi = p.analysis.risks.filter(r => r.severity === 'medium').length;
+            const lo = p.analysis.risks.filter(r => r.severity === 'low').length;
+            const score = p.analysis.score;
+            const orgName = p.orgId ? organizations.find(o => o.id === p.orgId)?.name : undefined;
+            return (
+              <div key={p.id}
+                onClick={() => router.push(`/project/${p.id}`)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all"
+                style={{ background: 'rgba(22,10,10,0.9)', borderColor: 'rgba(255,255,255,0.07)' }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,26,26,0.25)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(255,26,26,0.08)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '';
+                }}>
+                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${
+                  p.analysis.source === 'ai'
+                    ? 'bg-purple-900/50 text-purple-300 border-purple-500/20'
+                    : 'bg-white/5 text-white/40 border-white/10'
+                }`}>
+                  {p.analysis.source === 'ai' ? '🤖 KI' : '✅ Regel'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-white text-sm leading-tight truncate">{p.data.projectName || 'Unbenannt'}</div>
+                  {(p.data.clientName as string) && <div className="text-white/35 text-xs truncate">{p.data.clientName as string}</div>}
+                </div>
+                {orgName && (
+                  <div className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-blue-300/70 bg-blue-900/20 border border-blue-500/15 px-2 py-0.5 rounded-full">
+                    🏢 {orgName}
+                  </div>
+                )}
+                {score !== undefined && (
+                  <div className={`text-base font-black shrink-0 ${score >= 71 ? 'text-[#22aa66]' : score >= 51 ? 'text-amber-400' : 'text-[#ff1a1a]'}`}>
+                    {score}<span className="text-xs font-bold opacity-50">/100</span>
+                  </div>
+                )}
+                <div className="flex gap-3 shrink-0">
+                  {[{ val: hi, color: 'text-red-400', label: 'H' }, { val: mi, color: 'text-amber-400', label: 'M' }, { val: lo, color: 'text-blue-400', label: 'L' }].map(({ val, color, label }) => (
+                    <div key={label} className="text-center">
+                      <div className={`text-sm font-black leading-none ${color}`}>{val}</div>
+                      <div className="text-[9px] text-white/25 mt-0.5">{label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {organizations.length > 0 && (
+                    <button
+                      title="Organisation zuweisen"
+                      onClick={e => { e.stopPropagation(); openAssignModal(p.id, p.orgId); }}
+                      className="bg-transparent border-none text-white/20 cursor-pointer text-base leading-none hover:text-blue-400 transition-colors px-1">
+                      🏢
+                    </button>
+                  )}
+                  <button
+                    onClick={e => { e.stopPropagation(); deleteProject(p.id); }}
+                    className="bg-transparent border-none text-white/15 cursor-pointer text-xl leading-none hover:text-[#ff1a1a] transition-colors">
+                    ×
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

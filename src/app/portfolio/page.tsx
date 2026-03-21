@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { LayoutGrid, LayoutList } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { Project } from '@/types';
 
@@ -86,6 +87,7 @@ export default function PortfolioPage() {
   const projects = useAppStore(s => s.projects);
   const [lifecycle, setLifecycle] = useState<Record<string, Lifecycle>>({});
   const [catFilter, setCatFilter] = useState<Category | 'Alle'>('Alle');
+  const [viewMode, setViewMode]   = useState<'grid' | 'list'>('grid');
 
   const techs = buildTechMap(projects);
   const cats: (Category | 'Alle')[] = ['Alle', 'Framework', 'Datenbank', 'Hosting / Infra'];
@@ -136,7 +138,8 @@ export default function PortfolioPage() {
         </div>
 
         {/* Kategorie-Filter */}
-        <div className="flex gap-1.5 mb-5 flex-wrap">
+        <div className="flex gap-1.5 mb-5 flex-wrap items-center justify-between">
+          <div className="flex gap-1.5 flex-wrap">
           {cats.map(cat => (
             <button key={cat} onClick={() => setCatFilter(cat)}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer"
@@ -151,6 +154,21 @@ export default function PortfolioPage() {
               </span>
             </button>
           ))}
+          </div>
+          <div className="flex gap-0.5 border border-white/[0.08] rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}
+              title="Rasteransicht">
+              <LayoutGrid size={14} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'}`}
+              title="Listenansicht">
+              <LayoutList size={14} />
+            </button>
+          </div>
         </div>
 
         {/* Leer-Zustand */}
@@ -161,8 +179,56 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        {/* Technologie-Cards */}
+        {/* Technologie-Cards / Liste */}
         {filtered.length > 0 && (
+          viewMode === 'list' ? (
+            <div className="flex flex-col gap-1.5">
+              {filtered.map(tech => {
+                const lc: Lifecycle = lifecycle[tech.key] ?? 'Aktiv';
+                const lcStyle = LIFECYCLE_STYLE[lc];
+                const hasAnyRisk = tech.projects.some(p => p.hasHighRisk);
+                return (
+                  <div key={tech.key}
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all hover:border-white/[0.15]"
+                    style={{ background: 'rgba(14,6,6,0.75)', borderColor: 'rgba(255,255,255,0.07)' }}>
+                    <span className="text-base shrink-0">{CAT_ICONS[tech.category]}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-white truncate">{tech.label}</span>
+                        {hasAnyRisk && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25 shrink-0">⚠️ Risiko</span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-white/30">{tech.category}</div>
+                    </div>
+                    <div className="shrink-0 hidden sm:flex flex-wrap gap-1 max-w-[240px]">
+                      {tech.projects.slice(0, 4).map(p => (
+                        <span key={p.id} className="text-[10px] px-1.5 py-0.5 rounded-full border"
+                          style={{
+                            background: p.hasHighRisk ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)',
+                            borderColor: p.hasHighRisk ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.08)',
+                            color: p.hasHighRisk ? '#ef4444' : 'rgba(255,255,255,0.45)',
+                          }}>
+                          {p.name}
+                        </span>
+                      ))}
+                      {tech.projects.length > 4 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-white/30">+{tech.projects.length - 4}</span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-white/30 shrink-0">{tech.projects.length} Projekt{tech.projects.length !== 1 ? 'e' : ''}</div>
+                    <button
+                      onClick={() => cycleLifecycle(tech.key)}
+                      title="Klicken zum Wechseln des Lifecycle-Status"
+                      className="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full border cursor-pointer transition-all hover:opacity-80"
+                      style={{ background: lcStyle.bg, color: lcStyle.text, borderColor: lcStyle.border }}>
+                      {lc}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtered.map(tech => {
               const lc: Lifecycle = lifecycle[tech.key] ?? 'Aktiv';
@@ -250,6 +316,7 @@ export default function PortfolioPage() {
               );
             })}
           </div>
+          )
         )}
 
         {filtered.length === 0 && projects.length > 0 && (
