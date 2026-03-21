@@ -144,8 +144,8 @@ describe('Dashboard – Stats (View-unabhängig)', () => {
     const analysis: AnalysisResult = {
       ...makeAnalysis(50),
       risks: [
-        { id: 'r1', title: 'Kritisch', description: '', severity: 'high', effort: 'low' },
-        { id: 'r2', title: 'Mittel',   description: '', severity: 'medium', effort: 'low' },
+        { title: 'Kritisch', description: '', severity: 'high', recommendation: '' },
+        { title: 'Mittel',   description: '', severity: 'medium', recommendation: '' },
       ],
     };
     useAppStore.getState().addProject(makeData('Proj X'), analysis);
@@ -261,7 +261,7 @@ describe('Portfolio – buildTechMap (identische Daten für grid & list)', () =>
   it('markiert Technologien bei Projekten mit hohem Risiko', () => {
     const riskyAnalysis: AnalysisResult = {
       ...makeAnalysis(40),
-      risks: [{ id: 'r1', title: 'Risky', description: '', severity: 'high', effort: 'low' }],
+      risks: [{ title: 'Risky', description: '', severity: 'high', recommendation: '' }],
     };
     useAppStore.getState().addProject(makeData('Risky App', 'go'), riskyAnalysis);
     const { projects } = useAppStore.getState();
