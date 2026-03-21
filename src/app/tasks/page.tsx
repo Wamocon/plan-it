@@ -286,8 +286,6 @@ export default function TasksPage() {
             <LayoutGrid size={14} />
           </button>
         </div>
-
-        </div>
       </div>
 
       {/* Ergebniszahl */}
