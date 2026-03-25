@@ -1,0 +1,12 @@
+# Entscheidungen der App
+
+1. **Framework:** Verwendung von Next.js für SSR und React für UI
+2. **Styling:** Tailwind CSS für schnelle UI-Entwicklung
+3. **Backend:** Nutzung von Next.js API-Routen statt separatem Backend
+4. **Datenbank:** Supabase (PostgreSQL) als DB und Auth-Provider
+5. **Testing:** Vitest für Unit- und Integrationstests
+6. **CI/CD:** Automatisierte Tests und Deployment (z.B. Vercel)
+7. **Externe Integration:** Jira für Aufgabenmanagement, OAuth für Authentifizierung
+8. **State Management:** Zustand/Context API
+9. **Modularität:** Klare Trennung von Komponenten, Stores und Libs
+10. **Sicherheit:** JWT, HTTPS, RLS-Policies in Supabase

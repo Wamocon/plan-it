@@ -1,0 +1,19 @@
+# Technische Schnittstellenbeschreibung der App
+
+## Interne Schnittstellen
+- **API-Routen:** RESTful Endpunkte unter /api/* (z.B. /api/auth, /api/jira)
+- **State Management:** Stores (z.B. appStore) für globale Zustände
+- **Libs:** Utility- und Servicefunktionen für Datenzugriffe und Logik
+
+## Externe Schnittstellen
+- **Supabase:** Authentifizierung, Datenbankzugriffe (SQL, Policies)
+- **Jira:** REST API für Issue-Management und Synchronisation
+- **OAuth:** Authentifizierung mit Drittanbietern
+
+## Datenformate
+- JSON für API-Kommunikation
+- SQL für Datenbankzugriffe
+
+## Sicherheit
+- JWT-Token für Authentifizierung
+- HTTPS für alle Verbindungen

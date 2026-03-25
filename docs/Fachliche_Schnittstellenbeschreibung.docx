@@ -1,0 +1,22 @@
+# Fachliche Schnittstellenbeschreibung der App
+
+## Benutzer
+- Registrierung, Login, Rollenverwaltung
+- Zuweisung zu Organisationen und Teams
+
+## Projekte & Aufgaben
+- Anlegen, Bearbeiten, Löschen von Projekten und Aufgaben
+- Zuweisung von Aufgaben zu Benutzern
+- Status- und Fortschrittsverfolgung
+
+## Analyse & Reporting
+- Auswertung von Aufgaben, Projekten und Teams
+- Exportfunktionen (PDF, Word)
+
+## Kommunikation
+- Chat- und Kollaborationsfunktionen
+- Benachrichtigungen
+
+## Externe Systeme
+- Synchronisation mit Jira
+- Authentifizierung über OAuth-Provider
