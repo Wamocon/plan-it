@@ -1,0 +1,27 @@
+# Architekturdokumentation der App
+
+## Überblick
+Die App ist als moderne Webanwendung mit Next.js (React), TypeScript und Tailwind CSS umgesetzt. Die Backend-Logik wird über API-Routen in Next.js realisiert. Persistenz und Authentifizierung erfolgen über Supabase. Jira wird für externe Integrationen genutzt.
+
+## Komponenten
+- **Frontend:** Next.js, React, Tailwind CSS
+- **Backend:** Next.js API-Routen
+- **Persistenz:** Supabase (PostgreSQL)
+- **Externe Dienste:** Jira, OAuth-Provider
+- **State Management:** Zustand/Context API
+
+## Architekturdiagramm
+- Layered Architecture: UI → API → DB/Services
+- Trennung von UI, Logik und Datenhaltung
+
+## Deployment
+- Deployment auf Vercel oder vergleichbare Plattformen
+- CI/CD mit Vitest für Tests
+
+## Sicherheit
+- Authentifizierung via Supabase Auth
+- Zugriffskontrolle über Rollen und Policies
+
+## Erweiterbarkeit
+- Modularer Aufbau (Komponenten, Stores, Libs)
+- Einfache Integration neuer Features und Schnittstellen

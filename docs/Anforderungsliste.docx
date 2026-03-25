@@ -1,0 +1,14 @@
+# Anforderungsliste für die App
+
+1. Benutzerverwaltung (Registrierung, Login, Rechteverwaltung)
+2. Projekt- und Aufgabenmanagement
+3. Integration mit Jira und Supabase
+4. Analysefunktionen und Reporting
+5. Chat- und Kollaborationsfunktionen
+6. Organisations- und Teamverwaltung
+7. Responsive Web-UI mit Next.js und Tailwind CSS
+8. Exportfunktionen (PDF, Word)
+9. Authentifizierung via OAuth (z.B. Google, Jira)
+10. Rollenspezifische Zugriffssteuerung
+
+Weitere Anforderungen können nach Bedarf ergänzt werden.
