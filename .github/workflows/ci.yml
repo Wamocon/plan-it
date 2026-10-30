@@ -171,7 +171,7 @@ jobs:
 
       - name: Produkthandbuch + Coverage für GitHub Pages vorbereiten
         if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.node-version == 22
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/
 
